@@ -163,6 +163,7 @@ type AllTriggerResponse struct {
 	FuturePriceThreshold     float64 `json:"futurePriceThreshold"`
 	PriceDifferenceThreshold float64 `json:"priceDifferenceThreshold"`
 	FundingRateThreshold     float64 `json:"fundingRateThreshold"`
+	TriggerType              string  `json:"triggerType"`
 }
 
 func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
@@ -210,25 +211,26 @@ func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
 	var responseText string
 	count := 1
 	for _, trigger := range response {
-		// if trigger.SpotPriceThreshold != 0 {
-		// 	responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tspotPriceThreshold: %f\n",
-		// 		count, trigger.Symbol, trigger.Condition, trigger.SpotPriceThreshold)
-		// } else if trigger.FuturePriceThreshold != 0 {
-		// 	responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfuturePriceThreshold: %f\n",
-		// 		count, trigger.Symbol, trigger.Condition, trigger.FuturePriceThreshold)
-		// } else if trigger.PriceDifferenceThreshold != 0 {
-		// 	responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tpriceDifferenceThreshold: %f\n",
-		// 		count, trigger.Symbol, trigger.Condition, trigger.PriceDifferenceThreshold)
-		// } else if trigger.FundingRateThreshold != 0 {
-		// 	responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfundingRateThreshold: %f\n",
-		// 		count, trigger.Symbol, trigger.Condition, trigger.FundingRateThreshold)
-		// }
-		responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tspotPriceThreshold: %f\n\tfuturePriceThreshold: %f\n\tpriceDifferenceThreshold: %f\n\tfundingRateThreshold: %f\n",
-			count, trigger.Symbol, trigger.Condition, trigger.SpotPriceThreshold, trigger.FuturePriceThreshold, trigger.PriceDifferenceThreshold, trigger.FundingRateThreshold)
+		if trigger.TriggerType == "spot" {
+			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tspotPriceThreshold: %f\n",
+				count, trigger.Symbol, trigger.Condition, trigger.SpotPriceThreshold)
+		} else if trigger.TriggerType == "future" {
+			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfuturePriceThreshold: %f\n",
+				count, trigger.Symbol, trigger.Condition, trigger.FuturePriceThreshold)
+		} else if trigger.TriggerType == "price-difference" {
+			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tpriceDifferenceThreshold: %f\n",
+				count, trigger.Symbol, trigger.Condition, trigger.PriceDifferenceThreshold)
+		} else if trigger.TriggerType == "funding-rate" {
+			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfundingRateThreshold: %f\n",
+				count, trigger.Symbol, trigger.Condition, trigger.FundingRateThreshold)
+		}
 		count++
 	}
-
-	bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("All triggers:\n%v", responseText)))
+	if responseText == "" {
+		bot.Send(tgbotapi.NewMessage(ID, "No triggers found"))
+	} else {
+		bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("All triggers:\n%v", responseText)))
+	}
 }
 
 func DeleteTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type string) {
