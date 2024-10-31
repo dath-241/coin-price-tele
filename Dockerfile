@@ -1,6 +1,21 @@
 # Use the official Golang image as a parent image
 FROM golang:1.23.1-alpine
 
+# Install Chromium and necessary libraries
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ttf-freefont
+
+# Set environment variables for Chrome
+ENV CHROME_BIN=/usr/bin/chromium-browser \
+    CHROME_PATH=/usr/lib/chromium/
+
+# Grant permissions if Chromedp has issues running headlessly
+RUN chmod -R 777 /usr/bin/chromium-browser
+
 # Set the working directory inside the container
 WORKDIR /app
 
