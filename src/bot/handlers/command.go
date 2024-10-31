@@ -300,13 +300,16 @@ func getKlineData(symbol string, interval string, options ...int) ([]klineData, 
 	// Make the GET request
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		fmt.Errorf("failed to make request: %v", err)
+		log.Printf("failed to make request: %v", err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	// Check if request was successful
 	if resp.StatusCode != http.StatusOK {
-		fmt.Errorf("request failed: %s", resp.Status)
+		err = fmt.Errorf("request failed: %s", resp.Status)
+		log.Println(err) // Log the error
+		return nil, err  // Return the error
 	}
 
 	// Read the response body
