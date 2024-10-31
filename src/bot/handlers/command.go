@@ -412,6 +412,11 @@ func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
 		return
 	}
 	req.Header.Add("Accept", "*/*")
+	token, err := services.GetUserToken(int(ID))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	req.Header.Add("Cookie", fmt.Sprintf("token=%s", token))
 
 	res, err := client.Do(req)
@@ -432,6 +437,7 @@ func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		fmt.Println("Error unmarshalling response:", err)
+		bot.Send(tgbotapi.NewMessage(ID, "Oops! Something went wrong. Please try again later."))
 		return
 	}
 

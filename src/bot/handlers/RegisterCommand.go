@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
+	"telegram-bot/services"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
-
-var token = "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJNSyIsInN1YiI6InRyYW5odXkiLCJwYXNzd29yZCI6ImFpIGNobyBjb2kgbeG6rXQga2jhuql1IiwiZXhwIjoxNzMwMzM2MTUwfQ.1N--Ur3cno-j_pFIs9hxc3q6BWLxL0JYWCd9plPx7qE"
 
 type ErrorResponse struct {
 	AlertID string `json:"alert_id"`
@@ -42,7 +42,11 @@ func RegisterPriceThreshold(ID int64, symbol string, threshold float64, is_lower
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "*/*")
-
+	token, err := services.GetUserToken(int(ID))
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
 	req.Header.Add("Cookie", fmt.Sprintf("token=%s", token))
 	res, err := client.Do(req)
 	if err != nil {
@@ -61,6 +65,7 @@ func RegisterPriceThreshold(ID int64, symbol string, threshold float64, is_lower
 	var errorResponse ErrorResponse
 	if err := json.Unmarshal(body, &errorResponse); err != nil {
 		fmt.Println("Error unmarshalling response:", err)
+		bot.Send(tgbotapi.NewMessage(ID, "Oops! Something went wrong. Please try again later."))
 		return err
 	}
 	//bot.Send(tgbotapi.NewMessage(ID, errorResponse.Message))
@@ -110,6 +115,12 @@ func RegisterPriceDifferenceAndFundingRate(ID int64, symbol string, threshold fl
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "*/*")
+
+	token, err := services.GetUserToken(int(ID))
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
 	req.Header.Add("Cookie", fmt.Sprintf("token=%s", token))
 
 	res, err := client.Do(req)
@@ -128,6 +139,7 @@ func RegisterPriceDifferenceAndFundingRate(ID int64, symbol string, threshold fl
 	var errorResponse ErrorResponse
 	if err := json.Unmarshal(body, &errorResponse); err != nil {
 		fmt.Println("Error unmarshalling response:", err)
+		bot.Send(tgbotapi.NewMessage(ID, "Oops! Something went wrong. Please try again later."))
 		return err
 	}
 	//bot.Send(tgbotapi.NewMessage(ID, errorResponse.Message))
@@ -150,9 +162,16 @@ func DeleteTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type str
 
 	if err != nil {
 		fmt.Println(err)
+		bot.Send(tgbotapi.NewMessage(ID, "Oops! Something went wrong. Please try again later."))
 		return
 	}
 	req.Header.Add("Accept", "*/*")
+
+	token, err := services.GetUserToken(int(ID))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	req.Header.Add("Cookie", fmt.Sprintf("token=%s", token))
 	res, err := client.Do(req)
 	if err != nil {
