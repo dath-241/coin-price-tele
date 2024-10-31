@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 type AuthResponse struct {
@@ -13,55 +14,64 @@ type AuthResponse struct {
 }
 
 func AuthenticateUser(telegramId int64) (string, error) {
-	url := "http://localhost:3000/auth"
-
-	// Create the request body
-	body := map[string]interface{}{
-		"telegramId": fmt.Sprintf("%d", telegramId),
-	}
-	jsonBody, _ := json.Marshal(body)
-
-	// Send the POST request to the mock backend
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	// Check if the user has token in the database
+	token, err := GetUserToken(int(telegramId))
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusForbidden {
+	if token == "" {
 		return "", fmt.Errorf("access denied")
 	}
-
-	// Decode the response
-	var authResponse AuthResponse
-	err = json.NewDecoder(resp.Body).Decode(&authResponse)
-	if err != nil {
-		return "", err
-	}
-
-	return authResponse.AccessToken, nil
+	return "You are authenticated", nil
 }
 
-func ValidateToken(token string) (string, error) {
-	url := "http://localhost:3000/protected"
+func LogIn(username, password string) (string, string, error) {
+	url, _ := url.Parse("http://hcmutssps.id.vn/auth/login")
 
-	// Add the Authorization header
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", "Bearer "+token)
-
+	body := map[string]string{
+		"username": username,
+		"password": password,
+	}
+	jsonBody, _ := json.Marshal(body)
+	req, _ := http.NewRequest("PUT", url.String(), bytes.NewBuffer(jsonBody))
+	req.Header.Add("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
+	token := resp.Cookies()[0].Value
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
-		return string(body), nil
+		return string(body), token, nil
 	}
 
-	return "", fmt.Errorf("invalid token")
+	return "", "", fmt.Errorf("invalid username or password")
+}
+
+func setHeaders(req *http.Request, token string) {
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Cookie", "token="+token)
+}
+
+// Using the cookie jar to get the user info
+func GetUserInfo(token string) (string, error) {
+	url, _ := url.Parse("http://hcmutssps.id.vn/api/info")
+	req, _ := http.NewRequest("GET", url.String(), nil)
+	setHeaders(req, token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
 }

@@ -11,8 +11,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"telegram-bot/services"
+
 	"time"
 
 	// "github.com/chromedp/chromedp"
@@ -21,10 +21,9 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-var userTokens = struct {
-	sync.RWMutex
-	m map[int]string
-}{m: make(map[int]string)}
+func init() {
+	services.InitDB()
+}
 
 // Handle incoming messages (commands or regular text)
 func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
@@ -61,7 +60,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			log.Println("Error sending message:", err)
 		}
 	case "/start":
-		token, err := services.AuthenticateUser(user.ID)
+		response, err := services.AuthenticateUser(user.ID)
 		if err != nil {
 			_, err := bot.Send(tgbotapi.NewMessage(chatID, "Access denied."))
 			if err != nil {
@@ -69,16 +68,44 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			}
 			return
 		}
-
-		// Send a message showing access was granted
-		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Access granted. Your token is: %s", token))
-		// Store the token
-		userTokens.Lock()
-		userTokens.m[int(user.ID)] = token
-		userTokens.Unlock()
-		_, err = bot.Send(msg)
+		_, err = bot.Send(tgbotapi.NewMessage(chatID, response))
 		if err != nil {
 			log.Println("Error sending message:", err)
+		}
+	case "/login":
+		// With two args: /login username password
+		if len(args) < 2 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /login <username> <password>")
+			bot.Send(msg)
+			return
+		}
+
+		username := args[0]
+		password := args[1]
+		response, token, err := services.LogIn(username, password)
+
+		if err != nil {
+			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error logging in: "+err.Error()))
+		} else {
+			_, _ = bot.Send(tgbotapi.NewMessage(chatID, response))
+			err = services.StoreUserToken(int(user.ID), token)
+			// Log the token
+			log.Println("Token:", token)
+			if err != nil {
+				log.Println("Error storing token:", err)
+			}
+		}
+	case "/getinfo":
+		token, err := services.GetUserToken(int(user.ID))
+		if err != nil {
+			log.Println("Error retrieving token:", err)
+			return
+		}
+		response, err := services.GetUserInfo(token)
+		if err != nil {
+			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error getting user info: "+err.Error()))
+		} else {
+			_, _ = bot.Send(tgbotapi.NewMessage(chatID, response))
 		}
 	case "/scream":
 		screaming = true
@@ -116,17 +143,6 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		}
 	case "/menu":
 		_, err := bot.Send(sendMenu(chatID))
-		if err != nil {
-			log.Println("Error sending message:", err)
-		}
-	case "/protected":
-		token := userTokens.m[int(user.ID)]
-		response, err := services.ValidateToken(token)
-		if err != nil {
-			log.Println("Error validating token:", err)
-			return
-		}
-		_, err = bot.Send(tgbotapi.NewMessage(chatID, response))
 		if err != nil {
 			log.Println("Error sending message:", err)
 		}

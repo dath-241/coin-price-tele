@@ -25,6 +25,14 @@ var commands = []tgbotapi.BotCommand{
 		Description: "Authenticate and start using the bot",
 	},
 	{
+		Command:     "login",
+		Description: "Log in to the bot",
+	},
+	{
+		Command:     "getinfo",
+		Description: "Get user information",
+	},
+	{
 		Command:     "scream",
 		Description: "Enable screaming mode",
 	},
@@ -224,17 +232,3 @@ func PriceUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Price update received"))
 }
-
-// demo payload
-// {
-//     "symbol": "BTC",
-//     "spot_price": 59000,
-//     "future_price": 64000,
-//     "price_diff": 100,
-//     "fundingrate": 20,
-//     "threshold": 60000,
-//     "condition" : "<",
-//     "chatID": "6540286252",
-//     "timestamp": "2024-01-01T00:00:00Z",
-//     "triggerType": "spot"
-// }
