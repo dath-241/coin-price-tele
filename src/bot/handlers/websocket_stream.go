@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"telegram-bot/services"
 	"time"
 
 	"github.com/coder/websocket"
@@ -294,8 +295,9 @@ func fetchKlineData(symbol, interval, cookie string, chatID int64, bot *tgbotapi
 		bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Request creation error: %v", err)))
 		return
 	}
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Cookie", cookie)
+	// req.Header.Set("Accept", "*/*")
+	// req.Header.Set("Cookie", cookie)
+	services.SetHeadersWithPrice(req, cookie)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

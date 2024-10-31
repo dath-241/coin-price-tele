@@ -147,29 +147,46 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		}
 
 	case "/price_spot":
+		token, err := services.GetUserToken(int(user.ID))
+		if err != nil {
+			log.Println("Error retrieving token:", err)
+			return
+		}
 		if len(args) < 1 {
 			msg := tgbotapi.NewMessage(chatID, "Usage: /price_spot <symbol>")
 			bot.Send(msg)
 			return
 		}
 		symbol := args[0]
-		go GetSpotPriceStream(chatID, symbol, bot)
+		go GetSpotPriceStream(chatID, symbol, bot, token)
 	case "/price_futures":
+		token, err := services.GetUserToken(int(user.ID))
+		if err != nil {
+			log.Println("Error retrieving token:", err)
+			return
+		}
+
 		if len(args) < 1 {
 			msg := tgbotapi.NewMessage(chatID, "Usage: /price_futures <symbol>")
 			bot.Send(msg)
 			return
 		}
 		symbol := args[0]
-		go GetFuturesPriceStream(chatID, symbol, bot)
+		go GetFuturesPriceStream(chatID, symbol, bot, token)
 	case "/funding_rate":
+		token, err := services.GetUserToken(int(user.ID))
+		if err != nil {
+			log.Println("Error retrieving token:", err)
+			return
+		}
+
 		if len(args) < 1 {
 			msg := tgbotapi.NewMessage(chatID, "Usage: /funding_rate <symbol>")
 			bot.Send(msg)
 			return
 		}
 		symbol := args[0]
-		go GetFundingRateStream(chatID, symbol, bot)
+		go GetFundingRateStream(chatID, symbol, bot, token)
 	// case "/funding_rate_countdown":
 	// 	if len(args) < 1 {
 	// 		msg := tgbotapi.NewMessage(chatID, "Usage: /funding_rate_countdown <symbol>")
@@ -191,10 +208,14 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		userConnections[chatID] = &UserConnection{isStreaming: true}
 		mapMutex.Unlock()
 
-		cookie := "token="
+		token, err := services.GetUserToken(int(user.ID))
+		if err != nil {
+			log.Println("Error retrieving token:", err)
+			return
+		}
 
 		// Start fetching Kline data and sending real-time updates to the user
-		go fetchKlineData(symbol, interval, cookie, chatID, bot)
+		go fetchKlineData(symbol, interval, token, chatID, bot)
 		bot.Send(tgbotapi.NewMessage(chatID, "Fetching real-time Kline data..."))
 	case "/stop":
 		mapMutex.Lock()

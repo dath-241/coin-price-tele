@@ -53,8 +53,13 @@ func LogIn(username, password string) (string, string, error) {
 	return "", "", fmt.Errorf("invalid username or password")
 }
 
-func setHeaders(req *http.Request, token string) {
+func SetHeaders(req *http.Request, token string) {
 	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Cookie", "token="+token)
+}
+
+func SetHeadersWithPrice(req *http.Request, token string) {
+	req.Header.Add("Accept", "*/*")
 	req.Header.Add("Cookie", "token="+token)
 }
 
@@ -62,7 +67,7 @@ func setHeaders(req *http.Request, token string) {
 func GetUserInfo(token string) (string, error) {
 	url, _ := url.Parse("http://hcmutssps.id.vn/api/info")
 	req, _ := http.NewRequest("GET", url.String(), nil)
-	setHeaders(req, token)
+	SetHeaders(req, token)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
