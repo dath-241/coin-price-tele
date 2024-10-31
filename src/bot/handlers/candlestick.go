@@ -28,16 +28,17 @@ func klineBase(kd []klineData) *charts.Kline {
 			Title: "Kline On Demand",
 		}),
 		charts.WithXAxisOpts(opts.XAxis{
-			SplitNumber: 5,
+			SplitNumber: 20,
 		}),
 		charts.WithYAxisOpts(opts.YAxis{
 			Scale: opts.Bool(true),
 		}),
 		charts.WithDataZoomOpts(opts.DataZoom{
-			Start:      50,
+			Start:      0,
 			End:        100,
 			XAxisIndex: []int{0},
 		}),
+		charts.WithAnimation(false),
 	)
 
 	kline.SetXAxis(x).AddSeries("kline", y)
