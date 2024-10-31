@@ -138,15 +138,15 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			return
 		}
 		symbol := args[0]
-		go GetSpotPrice(chatID, symbol, bot)
-	case "/price_future":
+		go GetSpotPriceStream(chatID, symbol, bot)
+	case "/price_futures":
 		if len(args) < 1 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /price_future <symbol>")
+			msg := tgbotapi.NewMessage(chatID, "Usage: /price_futures <symbol>")
 			bot.Send(msg)
 			return
 		}
 		symbol := args[0]
-		go GetFuturePrice(chatID, symbol, bot)
+		go GetFuturesPriceStream(chatID, symbol, bot)
 	case "/funding_rate":
 		if len(args) < 1 {
 			msg := tgbotapi.NewMessage(chatID, "Usage: /funding_rate <symbol>")
@@ -154,15 +154,43 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			return
 		}
 		symbol := args[0]
-		go GetFundingRate(chatID, symbol, bot)
-	case "/funding_rate_countdown":
-		if len(args) < 1 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /funding_rate_countdown <symbol>")
-			bot.Send(msg)
+		go GetFundingRateStream(chatID, symbol, bot)
+	// case "/funding_rate_countdown":
+	// 	if len(args) < 1 {
+	// 		msg := tgbotapi.NewMessage(chatID, "Usage: /funding_rate_countdown <symbol>")
+	// 		bot.Send(msg)
+	// 		return
+	// 	}
+	// 	symbol := args[0]
+	// 	go GetFundingRateCountdown(chatID, symbol, bot)
+	case "/kline_realtime":
+		if len(args) != 2 {
+			bot.Send(tgbotapi.NewMessage(chatID, "Usage: /kline <symbol> <interval>. Example: /kline BTCUSDT 1m"))
 			return
 		}
+
 		symbol := args[0]
-		go GetFundingRateCountdown(chatID, symbol, bot)
+		interval := args[1]
+
+		mapMutex.Lock()
+		userConnections[chatID] = &UserConnection{isStreaming: true}
+		mapMutex.Unlock()
+
+		cookie := "token="
+
+		// Start fetching Kline data and sending real-time updates to the user
+		go fetchKlineData(symbol, interval, cookie, chatID, bot)
+		bot.Send(tgbotapi.NewMessage(chatID, "Fetching real-time Kline data..."))
+	case "/stop":
+		mapMutex.Lock()
+		if userConn, ok := userConnections[chatID]; ok {
+			userConn.isStreaming = false
+			bot.Send(tgbotapi.NewMessage(chatID, "Stopped real-time Kline updates."))
+		} else {
+			bot.Send(tgbotapi.NewMessage(chatID, "No active real-time updates to stop."))
+		}
+		mapMutex.Unlock()
+
 	//----------------------------------------------------------------------------------------
 	case "/all_triggers":
 		go GetAllTrigger(chatID, bot)
@@ -205,24 +233,34 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			return
 		}
 		go RegisterPriceThreshold(chatID, symbol, threshold, is_lower, price_type, bot)
-	case "/price_differece":
-		if len(args) < 1 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /price_differece <threshold>")
+	case "/price_difference":
+		if len(args) != 3 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /price_difference <lower/above> <symbol> <threshold>")
 			bot.Send(msg)
 			return
 		}
-		msg := tgbotapi.NewMessage(chatID, "This command is not implemented yet.")
-		bot.Send(msg)
-		// go RegisterPriceDifference(chatID, symbol, threshold, is_lower, price_type, bot)
+		is_lower := args[0] == "lower"
+		symbol := args[1]
+		threshold, err := strconv.ParseFloat(args[2], 64)
+		if err != nil {
+			log.Println("Error parsing threshold:", err)
+			return
+		}
+		go RegisterPriceDifferenceAndFundingRate(chatID, symbol, threshold, is_lower, "price-difference", bot)
 	case "/funding_rate_change":
-		if len(args) < 1 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /funding_rate_change <threshold>")
+		if len(args) != 3 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /funding_rate_change <lower/above> <symbol> <threshold>")
 			bot.Send(msg)
 			return
 		}
-		msg := tgbotapi.NewMessage(chatID, "This command is not implemented yet.")
-		bot.Send(msg)
-		// go RegisterFundingRateChange(chatID, symbol, threshold, is_lower, price_type, bot)
+		is_lower := args[0] == "lower"
+		symbol := args[1]
+		threshold, err := strconv.ParseFloat(args[2], 64)
+		if err != nil {
+			log.Println("Error parsing threshold:", err)
+			return
+		}
+		go RegisterPriceDifferenceAndFundingRate(chatID, symbol, threshold, is_lower, "funding-rate", bot)
 	}
 
 }
@@ -335,14 +373,15 @@ func sendChartToTelegram(bot *tgbotapi.BotAPI, chatID int64, chart *charts.Kline
 }
 
 type AllTriggerResponse struct {
-	ID                   string  `json:"id"`
-	AlertID              string  `json:"alert_id"`
-	Username             string  `json:"username"`
-	Symbol               string  `json:"symbol"`
-	Condition            string  `json:"condition"`
-	NotificationMethod   *string `json:"notification_method"`
-	SpotPriceThreshold   float64 `json:"spotPriceThreshold"`
-	FuturePriceThreshold float64 `json:"futurePriceThreshold"`
+	ID                       string  `json:"id"`
+	AlertID                  string  `json:"alert_id"`
+	Username                 string  `json:"username"`
+	Symbol                   string  `json:"symbol"`
+	Condition                string  `json:"condition"`
+	SpotPriceThreshold       float64 `json:"spotPriceThreshold"`
+	FuturePriceThreshold     float64 `json:"futurePriceThreshold"`
+	PriceDifferenceThreshold float64 `json:"priceDifferenceThreshold"`
+	FundingRateThreshold     float64 `json:"fundingRateThreshold"`
 }
 
 func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
@@ -357,7 +396,7 @@ func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
 		return
 	}
 	req.Header.Add("Accept", "*/*")
-	req.Header.Add("Cookie", "token=eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJNSyIsInN1YiI6InRyYW5odXkiLCJwYXNzd29yZCI6ImFpIGNobyBjb2kgbeG6rXQga2jhuql1IiwiZXhwIjoxNzMwMTgyOTg2fQ.M0HlUeoRE5WuA59oIDWu9uQ32U1rIQIGd9AQiTlEbX4")
+	req.Header.Add("Cookie", fmt.Sprintf("token=%s", token))
 
 	res, err := client.Do(req)
 	if err != nil {
@@ -384,45 +423,23 @@ func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
 	var responseText string
 	count := 1
 	for _, trigger := range response {
-		if trigger.SpotPriceThreshold != 0 {
-			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tspotPriceThreshold: %f\n",
-				count, trigger.Symbol, trigger.Condition, trigger.SpotPriceThreshold)
-		} else if trigger.FuturePriceThreshold != 0 {
-			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfuturePriceThreshold: %f\n",
-				count, trigger.Symbol, trigger.Condition, trigger.FuturePriceThreshold)
-		}
+		// if trigger.SpotPriceThreshold != 0 {
+		// 	responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tspotPriceThreshold: %f\n",
+		// 		count, trigger.Symbol, trigger.Condition, trigger.SpotPriceThreshold)
+		// } else if trigger.FuturePriceThreshold != 0 {
+		// 	responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfuturePriceThreshold: %f\n",
+		// 		count, trigger.Symbol, trigger.Condition, trigger.FuturePriceThreshold)
+		// } else if trigger.PriceDifferenceThreshold != 0 {
+		// 	responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tpriceDifferenceThreshold: %f\n",
+		// 		count, trigger.Symbol, trigger.Condition, trigger.PriceDifferenceThreshold)
+		// } else if trigger.FundingRateThreshold != 0 {
+		// 	responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfundingRateThreshold: %f\n",
+		// 		count, trigger.Symbol, trigger.Condition, trigger.FundingRateThreshold)
+		// }
+		responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tspotPriceThreshold: %f\n\tfuturePriceThreshold: %f\n\tpriceDifferenceThreshold: %f\n\tfundingRateThreshold: %f\n",
+			count, trigger.Symbol, trigger.Condition, trigger.SpotPriceThreshold, trigger.FuturePriceThreshold, trigger.PriceDifferenceThreshold, trigger.FundingRateThreshold)
 		count++
 	}
 
 	bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("All triggers:\n%v", responseText)))
-}
-
-func DeleteTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type string) {
-	url := fmt.Sprintf("https://hcmutssps.id.vn/api/vip2/delete/%s?triggerType=%s", symbol, price_type)
-	method := "DELETE"
-
-	client := &http.Client{}
-	req, err := http.NewRequest(method, url, nil)
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	req.Header.Add("Accept", "*/*")
-	req.Header.Add("Cookie", "token=eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJNSyIsInN1YiI6InRyYW5odXkiLCJwYXNzd29yZCI6ImFpIGNobyBjb2kgbeG6rXQga2jhuql1IiwiZXhwIjoxNzMwMTgyOTg2fQ.M0HlUeoRE5WuA59oIDWu9uQ32U1rIQIGd9AQiTlEbX4")
-
-	res, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(string(body))
-	bot.Send(tgbotapi.NewMessage(ID, string(body)))
 }
