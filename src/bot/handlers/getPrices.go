@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"telegram-bot/services"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -18,7 +19,7 @@ const (
 	APIBaseURL_Spot_Price    = "https://hcmutssps.id.vn/api/get-spot-price"
 	APIBaseURL_Futures_Price = "https://hcmutssps.id.vn/api/get-future-price"
 	APIBaseURL_Funding_Rate  = "https://hcmutssps.id.vn/api/get-funding-rate"
-	CookieToken              = "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJNSyIsInN1YiI6InRyYW5odXkiLCJwYXNzd29yZCI6ImFpIGNobyBjb2kgbeG6rXQga2jhuql1IiwiZXhwIjoxNzMwMzYyNDI5fQ.R14QMImoy3rRLQus4S9QglMnmdh49BU3Su5v3-rWI4o"
+	//CookieToken              = "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJNSyIsInN1YiI6InRyYW5odXkiLCJwYXNzd29yZCI6ImFpIGNobyBjb2kgbeG6rXQga2jhuql1IiwiZXhwIjoxNzMwMzkyNTE1fQ.qXZk4x_zDnRMqMWw6JJEj7jBhIhtAzBO3-n17heH5Hk"
 )
 
 type SpotPriceResponse struct {
@@ -116,7 +117,7 @@ func FormatPrice1(a string) string {
 	return a
 }
 
-func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
+func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
 
 	// Create a cancellable context
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -134,8 +135,10 @@ func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
 	}
 
 	// Set necessary headers for the request
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Cookie", fmt.Sprintf("token=%s", CookieToken))
+	// req.Header.Set("Accept", "*/*")
+	// req.Header.Set("Cookie", fmt.Sprintf("token=%s", CookieToken))
+
+	services.SetHeadersWithPrice(req, token)
 
 	// Create an HTTP client and execute the request
 	client := &http.Client{}
@@ -211,7 +214,7 @@ func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
 	}
 }
 
-func GetFuturesPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
+func GetFuturesPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
 
 	// Create a cancellable context
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -219,7 +222,7 @@ func GetFuturesPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
 
 	// Create the request URL
 	reqUrl := fmt.Sprintf("%s?symbols=%s", APIBaseURL_Futures_Price, symbol)
-	log.Printf("API URL: %s", reqUrl)
+	//log.Printf("API URL: %s", reqUrl)
 
 	// Create an HTTP request
 	req, err := http.NewRequestWithContext(ctx, "GET", reqUrl, nil)
@@ -229,8 +232,10 @@ func GetFuturesPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
 	}
 
 	// Set necessary headers for the request
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Cookie", fmt.Sprintf("token=%s", CookieToken))
+	// req.Header.Set("Accept", "*/*")
+	// req.Header.Set("Cookie", fmt.Sprintf("token=%s", CookieToken))
+
+	services.SetHeadersWithPrice(req, token)
 
 	// Create an HTTP client and execute the request
 	client := &http.Client{}
@@ -306,14 +311,14 @@ func GetFuturesPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
 	}
 }
 
-func GetFundingRateStream(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
+func GetFundingRateStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
 	// Create a cancellable context
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel() // Ensure context is canceled when done
 
 	// Create the request URL
 	reqUrl := fmt.Sprintf("%s?symbols=%s", APIBaseURL_Funding_Rate, symbol)
-	log.Printf("API URL: %s", reqUrl)
+	//log.Printf("API URL: %s", reqUrl)
 
 	// Create an HTTP request
 	req, err := http.NewRequestWithContext(ctx, "GET", reqUrl, nil)
@@ -323,8 +328,10 @@ func GetFundingRateStream(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
 	}
 
 	// Set necessary headers for the request
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Cookie", fmt.Sprintf("token=%s", CookieToken))
+	// req.Header.Set("Accept", "*/*")
+	// req.Header.Set("Cookie", fmt.Sprintf("token=%s", CookieToken))
+
+	services.SetHeadersWithPrice(req, token)
 
 	// Create an HTTP client and execute the request
 	client := &http.Client{}
