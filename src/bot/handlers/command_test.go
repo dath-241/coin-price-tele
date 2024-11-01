@@ -48,18 +48,6 @@ func TestSendMenu(t *testing.T) {
 	assert.NotNil(t, menuMessage.ReplyMarkup, "ReplyMarkup should not be nil.")
 }
 
-// Test sendScreamedMessage function
-func TestSendScreamedMessage(t *testing.T) {
-	message := &tgbotapi.Message{
-		Text: "hello world",
-		Chat: &tgbotapi.Chat{ID: 123456},
-	}
-	screamedMessage := sendScreamedMessage(message)
-
-	assert.Equal(t, "HELLO WORLD", screamedMessage.Text, "The message should be in uppercase.")
-	assert.Equal(t, tgbotapi.ModeHTML, screamedMessage.ParseMode, "The parse mode should be HTML.")
-}
-
 // Test copyMessage function
 func TestCopyMessage(t *testing.T) {
 	message := &tgbotapi.Message{

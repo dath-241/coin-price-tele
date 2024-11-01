@@ -16,10 +16,6 @@ const (
 )
 
 var (
-	screaming = false
-)
-
-var (
 	// Keyboard layout for the first menu. One button, one row
 	firstMenuMarkup = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
@@ -53,5 +49,4 @@ var commandList = []string{
 	"/kline <symbol> <interval> [limit] [startTime] [endTime] - Get Kline data for a symbol",
 	"/kline_realtime <symbol> <interval> Get realtime Kline data",
 	"/stop - stop receiving data from kline-realtime",
-
 }
