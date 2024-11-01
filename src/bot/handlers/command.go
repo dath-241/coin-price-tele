@@ -232,12 +232,17 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		go GetAllTrigger(chatID, bot)
 	case "/delete_trigger":
 		if len(args) != 2 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /delete_trigger <symbol> <spot/future/price-difference/funding-rate>")
+			msg := tgbotapi.NewMessage(chatID, "Usage: /delete_trigger <spot/future/price-difference/funding-rate> <symbol>")
 			bot.Send(msg)
 			return
 		}
-		symbol := args[1]
+		if args[0] != "spot" && args[0] != "future" && args[0] != "price-difference" && args[0] != "funding-rate" {
+			msg := tgbotapi.NewMessage(chatID, "First argument must be either 'spot' or 'future' or 'price-difference' or 'funding-rate'")
+			bot.Send(msg)
+			return
+		}
 		price_type := args[0]
+		symbol := args[1]
 		go DeleteTrigger(chatID, bot, symbol, price_type)
 	case "/alert_price_with_threshold":
 		if len(args) != 4 {
@@ -275,6 +280,11 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			bot.Send(msg)
 			return
 		}
+		if args[0] != "lower" && args[0] != "above" {
+			msg := tgbotapi.NewMessage(chatID, "First argument must be either 'lower' or 'above'")
+			bot.Send(msg)
+			return
+		}
 		is_lower := args[0] == "lower"
 		symbol := args[1]
 		threshold, err := strconv.ParseFloat(args[2], 64)
@@ -286,6 +296,11 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 	case "/funding_rate_change":
 		if len(args) != 3 {
 			msg := tgbotapi.NewMessage(chatID, "Usage: /funding_rate_change <lower/above> <symbol> <threshold>")
+			bot.Send(msg)
+			return
+		}
+		if args[0] != "lower" && args[0] != "above" {
+			msg := tgbotapi.NewMessage(chatID, "First argument must be either 'lower' or 'above'")
 			bot.Send(msg)
 			return
 		}
