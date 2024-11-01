@@ -71,9 +71,9 @@ func RegisterPriceThreshold(ID int64, symbol string, threshold float64, is_lower
 	//bot.Send(tgbotapi.NewMessage(ID, errorResponse.Message))
 	if errorResponse.AlertID != "" {
 		if condition == "<" {
-			bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("Registered %s price of %s below %f threshold successfully!", price_type, symbol, threshold)))
+			bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("Registered %s price of %s below %s threshold successfully!", price_type, symbol, removeTrailingZeros(threshold))))
 		} else {
-			bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("Registered %s price of %s above %f threshold successfully!", price_type, symbol, threshold)))
+			bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("Registered %s price of %s above %s threshold successfully!", price_type, symbol, removeTrailingZeros(threshold))))
 		}
 	}
 	return nil
@@ -145,9 +145,9 @@ func RegisterPriceDifferenceAndFundingRate(ID int64, symbol string, threshold fl
 	//bot.Send(tgbotapi.NewMessage(ID, errorResponse.Message))
 	if errorResponse.AlertID != "" {
 		if condition == "<" {
-			bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("Registered %s of %s below %f threshold successfully!", Type, symbol, threshold)))
+			bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("Registered %s of %s below %s threshold successfully!", Type, symbol, removeTrailingZeros(threshold))))
 		} else {
-			bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("Registered %s of %s above %f threshold successfully!", Type, symbol, threshold)))
+			bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("Registered %s of %s above %s threshold successfully!", Type, symbol, removeTrailingZeros(threshold))))
 		}
 	}
 	return nil
@@ -164,6 +164,7 @@ type AllTriggerResponse struct {
 	PriceDifferenceThreshold float64 `json:"priceDifferenceThreshold"`
 	FundingRateThreshold     float64 `json:"fundingRateThreshold"`
 	TriggerType              string  `json:"triggerType"`
+	TriggerTypeTmp           string  `json:"trigger_type"` // this fucking thing in wrong
 }
 
 func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
@@ -212,17 +213,20 @@ func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
 	count := 1
 	for _, trigger := range response {
 		if trigger.TriggerType == "spot" {
-			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tspotPriceThreshold: %f\n",
-				count, trigger.Symbol, trigger.Condition, trigger.SpotPriceThreshold)
+			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tspotPriceThreshold: %s\n",
+				count, trigger.Symbol, trigger.Condition, removeTrailingZeros(trigger.SpotPriceThreshold))
 		} else if trigger.TriggerType == "future" {
-			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfuturePriceThreshold: %f\n",
-				count, trigger.Symbol, trigger.Condition, trigger.FuturePriceThreshold)
+			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfuturePriceThreshold: %s\n",
+				count, trigger.Symbol, trigger.Condition, removeTrailingZeros(trigger.FuturePriceThreshold))
 		} else if trigger.TriggerType == "price-difference" {
-			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tpriceDifferenceThreshold: %f\n",
-				count, trigger.Symbol, trigger.Condition, trigger.PriceDifferenceThreshold)
+			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tpriceDifferenceThreshold: %s\n",
+				count, trigger.Symbol, trigger.Condition, removeTrailingZeros(trigger.PriceDifferenceThreshold))
 		} else if trigger.TriggerType == "funding-rate" {
-			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfundingRateThreshold: %f\n",
-				count, trigger.Symbol, trigger.Condition, trigger.FundingRateThreshold)
+			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfundingRateThreshold: %s\n",
+				count, trigger.Symbol, trigger.Condition, removeTrailingZeros(trigger.FundingRateThreshold))
+		} else if trigger.TriggerTypeTmp == "future" {
+			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfuturePriceThreshold: %s\n",
+				count, trigger.Symbol, trigger.Condition, removeTrailingZeros(trigger.FuturePriceThreshold))
 		}
 		count++
 	}
@@ -268,3 +272,15 @@ func DeleteTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type str
 	fmt.Println(string(body))
 	bot.Send(tgbotapi.NewMessage(ID, string(body)))
 }
+
+func removeTrailingZeros(n float64) string {
+	// Convert float to string with maximum precision
+	str := fmt.Sprintf("%f", n)
+	
+	// Remove trailing zeros after decimal point
+	str = strings.TrimRight(strings.TrimRight(str, "0"), ".")
+	
+	return str
+}
+
+
