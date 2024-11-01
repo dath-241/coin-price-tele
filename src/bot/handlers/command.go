@@ -119,7 +119,22 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		if err != nil {
 			log.Println("Error sending message:", err)
 		}
+	case "/p":
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /p <symbol>")
+			bot.Send(msg)
+			return
+		}
 
+		symbol := args[0]
+		text := fmt.Sprintf("Hãy chọn thông tin mà bạn muốn xem cho %s:", symbol)
+		msg := tgbotapi.NewMessage(chatID, text)
+		msg.ReplyMarkup = GetPriceMenu()
+		msg.ParseMode = "HTML"
+
+		if _, err := bot.Send(msg); err != nil {
+			log.Println("Error sending message:", err)
+		}
 	case "/price_spot":
 		token, err := services.GetUserToken(int(user.ID))
 		if err != nil {
