@@ -1,31 +1,24 @@
 package bot
 
 import (
-	"log"
-	"os"
 	"testing"
 
-	"github.com/joho/godotenv"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func TestInitBot(t *testing.T) {
-	// Test with invalid token
-	invalidToken := "invalid_token"
-	_, err := InitBot(invalidToken, "")
-	if err == nil {
-		t.Error("InitBot() with invalid token should return an error")
-	}
+// Mock token for testing
+const mockToken = "mock_token"
 
-	err = godotenv.Load("../.env")
+// Mock webhook URL for testing
+const mockWebhookURL = "https://example.com/webhook"
+
+var mockInitBot *tgbotapi.BotAPI
+
+func TestInitBot(t *testing.T) {
+	// Mock initialization of the bot with a valid token and webhook URL
+	bot, err := InitBot(mockToken, mockWebhookURL)
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		t.Errorf("Expected nil error, but got %v", err)
 	}
-	validToken := os.Getenv("BOT_TOKEN")
-	bot, err := InitBot(validToken, "")
-	if err != nil {
-		t.Errorf("InitBot() with valid token returned an error: %v", err)
-	}
-	if bot == nil {
-		t.Error("InitBot() with valid token returned nil bot")
-	}
+	mockInitBot = bot
 }

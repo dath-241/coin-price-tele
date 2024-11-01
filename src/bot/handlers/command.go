@@ -36,11 +36,6 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 		command := parts[0]
 		args := parts[1:]
 		handleCommand(message.Chat.ID, command, args, bot, user)
-	} else if screaming {
-		_, err := bot.Send(sendScreamedMessage(message))
-		if err != nil {
-			log.Println("Error sending message:", err)
-		}
 	} else {
 		_, err := bot.Send(copyMessage(message))
 		if err != nil {
@@ -49,7 +44,7 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 	}
 }
 
-// Handle commands (e.g., /scream, /whisper, /menu)
+// Handle commands
 func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.BotAPI, user *tgbotapi.User) {
 	fmt.Println("userID: ", user.ID)
 	switch command {
@@ -105,18 +100,6 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error getting user info: "+err.Error()))
 		} else {
 			_, _ = bot.Send(tgbotapi.NewMessage(chatID, response))
-		}
-	case "/scream":
-		screaming = true
-		_, err := bot.Send(tgbotapi.NewMessage(chatID, "Screaming mode enabled."))
-		if err != nil {
-			log.Println("Error sending message:", err)
-		}
-	case "/whisper":
-		screaming = false
-		_, err := bot.Send(tgbotapi.NewMessage(chatID, "Screaming mode disabled."))
-		if err != nil {
-			log.Println("Error sending message:", err)
 		}
 	case "/kline":
 		if len(args) < 2 {
@@ -320,12 +303,6 @@ func sendMenu(chatID int64) tgbotapi.MessageConfig {
 	msg := tgbotapi.NewMessage(chatID, firstMenu)
 	msg.ParseMode = tgbotapi.ModeHTML
 	msg.ReplyMarkup = firstMenuMarkup
-	return msg
-}
-
-func sendScreamedMessage(message *tgbotapi.Message) tgbotapi.MessageConfig {
-	msg := tgbotapi.NewMessage(message.Chat.ID, strings.ToUpper(message.Text))
-	msg.ParseMode = tgbotapi.ModeHTML
 	return msg
 }
 

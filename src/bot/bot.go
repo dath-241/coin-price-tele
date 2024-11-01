@@ -33,14 +33,6 @@ var commands = []tgbotapi.BotCommand{
 		Description: "Get user information",
 	},
 	{
-		Command:     "scream",
-		Description: "Enable screaming mode",
-	},
-	{
-		Command:     "whisper",
-		Description: "Disable screaming mode",
-	},
-	{
 		Command:     "menu",
 		Description: "Show menu with buttons",
 	},

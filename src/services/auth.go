@@ -36,6 +36,12 @@ func LogIn(username, password string) (string, string, error) {
 	req, _ := http.NewRequest("PUT", url.String(), bytes.NewBuffer(jsonBody))
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
+
+	// If resp.status = 400 then return the error
+	if resp.StatusCode == http.StatusBadRequest {
+		return "", "", fmt.Errorf("invalid username or password")
+	}
+
 	token := resp.Cookies()[0].Value
 	if err != nil {
 		return "", "", err

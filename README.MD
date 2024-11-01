@@ -49,6 +49,11 @@ Copy đường dẫn tại Forwarding URL có dạng: https://ngrokurl.ngrok-fre
 
 Chạy bot bằng lệnh ```go run main.go```
 
+### Local test run bằng docker
+Sử dụng lệnh ```docker build -t coin-price-tele .``` để build image
+
+Sử dụng lệnh ```docker run -p 8443:8443 coin-price-tele``` để chạy container
+
 ## Liên hệ
 
 ---
