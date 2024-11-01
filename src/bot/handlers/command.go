@@ -296,7 +296,6 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		}
 		go RegisterPriceDifferenceAndFundingRate(chatID, symbol, threshold, is_lower, "funding-rate", bot)
 	}
-
 }
 
 func sendMenu(chatID int64) tgbotapi.MessageConfig {

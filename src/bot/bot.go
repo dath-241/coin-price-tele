@@ -14,6 +14,9 @@ import (
 	// "sync"
 	// "bytes"
 
+	// "sync"
+	// "bytes"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -110,9 +113,9 @@ type CoinPriceUpdate struct {
 }
 
 // Initialize the bot with the token
-func InitBot(token string, webhookURL string) (*tgbotapi.BotAPI, error) {
+func InitBot(bottoken string, webhookURL string) (*tgbotapi.BotAPI, error) {
 	var err error
-	bot, err = tgbotapi.NewBotAPI(token)
+	bot, err = tgbotapi.NewBotAPI(bottoken)
 	if err != nil {
 		return nil, err
 	}
@@ -121,10 +124,13 @@ func InitBot(token string, webhookURL string) (*tgbotapi.BotAPI, error) {
 	if err != nil {
 		return nil, err
 	}
+	//Sau khi tạo Webhook, bạn cần gửi nó đến Telegram để cấu hình:
 	_, err = bot.Request(webhook)
 	if err != nil {
 		return nil, err
 	}
+
+	//Đặt danh sách các lệnh (commands) cho bot Telegram.
 	_, err = bot.Request(tgbotapi.NewSetMyCommands(commands...))
 	if err != nil {
 		log.Panic(err)

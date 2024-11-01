@@ -87,6 +87,19 @@ func SendMessageToUser(bot *tgbotapi.BotAPI, chatID int64, message string) {
 	bot.Send(msg)
 }
 
+
+func NotifyUsers(bot *tgbotapi.BotAPI) {
+    chatIDs, err := GetChatIDs()
+    if err != nil {
+        log.Fatalf("Error retrieving chatIDs: %v", err)
+    }
+
+    for _, chatID := range chatIDs {
+        msg := tgbotapi.NewMessage(6989009560, chatID)
+        bot.Send(msg)
+    }
+}
+
 // Function to retrieve chatIDs from the backend
 func GetChatIDs() /*([]int64, error)*/ ([]string, error) {
 	url := "http://103.205.60.174:8080/admin/getAllUser" // Replace with your backend API URL
@@ -170,15 +183,3 @@ func UpdateChatIDSymbolThreshold(chatID int64, symbol []string, threshold []floa
 	log.Printf("Updated chatID %d, symbol %v, and threshold %v successfully!", chatID, symbol, threshold)
 	return nil
 }
-
-// func NotifyUsers(bot *tgbotapi.BotAPI) {
-// 	chatIDs, err := GetChatIDs()
-// 	if err != nil {
-// 		log.Fatalf("Error retrieving chatIDs: %v", err)
-// 	}
-
-// 	for _, chatID := range chatIDs {
-// 		msg := tgbotapi.NewMessage(6989009560, chatID)
-// 		bot.Send(msg)
-// 	}
-// }
