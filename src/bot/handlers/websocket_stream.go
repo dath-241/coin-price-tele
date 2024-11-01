@@ -1,12 +1,16 @@
 package handlers
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
+	"sync"
+	"telegram-bot/services"
 	"time"
 
 	"github.com/coder/websocket"
@@ -19,7 +23,26 @@ const (
 	BinanceFutureWSURL = "wss://fstream.binance.com/ws"
 )
 
+const baseUrl = "https://hcmutssps.id.vn/api/vip1/get-kline"
+
 var conn *websocket.Conn
+
+// KlineData struct to hold data from API
+type KlineData struct {
+	Symbol             string `json:"symbol"`
+	EventTime          string `json:"eventTime"`
+	KlineStartTime     string `json:"klineStartTime"`
+	KlineCloseTime     string `json:"klineCloseTime"`
+	OpenPrice          string `json:"openPrice"`
+	ClosePrice         string `json:"closePrice"`
+	HighPrice          string `json:"highPrice"`
+	LowPrice           string `json:"lowPrice"`
+	NumberOfTrades     int    `json:"numberOfTrades"`
+	BaseAssetVolume    string `json:"baseAssetVolume"`
+	TakerBuyVolume     string `json:"takerBuyVolume"`
+	TakerBuyBaseVolume string `json:"takerBuyBaseVolume"`
+	Volume             string `json:"volume"`
+}
 
 func connectWebSocket(url string) error {
 	var err error
@@ -61,27 +84,37 @@ func GetSpotPrice(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
 	// Create a background context for WebSocket connection
 	ctx := context.Background()
 	if err := connectWebSocket(BinanceSpotWSURL); err != nil {
-		log.Println("Error connect WebSocket:", err)
+		log.Println("Failed to connect to WebSocket:", err)
 		return
 	}
-	defer conn.Close(websocket.StatusNormalClosure, "closing")
+	defer conn.Close(websocket.StatusNormalClosure, "Connection closed")
 
 	stream := strings.ToLower(symbol) + "@ticker"
 	if err := subscribeToStream(stream); err != nil {
-		log.Println("Error subscribe stream:", err)
+		log.Println("Failed to subscribe to stream:", err)
 		return
 	}
 
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	for {
-		_, message, err := conn.Read(ctx)
+		// Use timeoutCtx in the Read operation
+		_, message, err := conn.Read(timeoutCtx)
 		if err != nil {
-			log.Println("Error read message:", err)
+			if websocket.CloseStatus(err) == websocket.StatusNormalClosure {
+				log.Println("WebSocket closed normally")
+			} else {
+				log.Println("Error reading message:", err)
+				msg := tgbotapi.NewMessage(chatID, "Invalid symbol. Please provide a valid symbol.")
+				bot.Send(msg)
+			}
 			return
 		}
 
 		var data map[string]interface{}
 		if err := json.Unmarshal(message, &data); err != nil {
-			log.Println("Error unmarshal json:", err)
+			log.Println("Failed to unmarshal JSON:", err)
 			continue
 		}
 
@@ -98,27 +131,37 @@ func GetFuturePrice(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
 	// Create a background context for WebSocket connection
 	ctx := context.Background()
 	if err := connectWebSocket(BinanceFutureWSURL); err != nil {
-		log.Println("Error connect WebSocket:", err)
+		log.Println("Failed to connect to WebSocket:", err)
 		return
 	}
-	defer conn.Close(websocket.StatusNormalClosure, "closing")
+	defer conn.Close(websocket.StatusNormalClosure, "Connection closed")
 
 	stream := strings.ToLower(symbol) + "@markPrice"
 	if err := subscribeToStream(stream); err != nil {
-		log.Println("Error subscribe stream:", err)
+		log.Println("Failed to subscribe to stream:", err)
 		return
 	}
 
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	for {
-		_, message, err := conn.Read(ctx)
+		// Use timeoutCtx in the Read operation
+		_, message, err := conn.Read(timeoutCtx)
 		if err != nil {
-			log.Println("Error read message:", err)
+			if websocket.CloseStatus(err) == websocket.StatusNormalClosure {
+				log.Println("WebSocket closed normally")
+			} else {
+				log.Println("Error reading message:", err)
+				msg := tgbotapi.NewMessage(chatID, "Invalid symbol. Please provide a valid symbol")
+				bot.Send(msg)
+			}
 			return
 		}
 
 		var data map[string]interface{}
 		if err := json.Unmarshal(message, &data); err != nil {
-			log.Println("Error unmarshal json:", err)
+			log.Println("Failed to unmarshal JSON:", err)
 			continue
 		}
 
@@ -135,27 +178,37 @@ func GetFundingRate(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
 	// Create a background context for WebSocket connection
 	ctx := context.Background()
 	if err := connectWebSocket(BinanceFutureWSURL); err != nil {
-		log.Println("Error connect WebSocket:", err)
+		log.Println("Failed to connect to WebSocket:", err)
 		return
 	}
-	defer conn.Close(websocket.StatusNormalClosure, "closing")
+	defer conn.Close(websocket.StatusNormalClosure, "Connection closed")
 
 	stream := strings.ToLower(symbol) + "@markPrice"
 	if err := subscribeToStream(stream); err != nil {
-		log.Println("Error subscribe stream:", err)
+		log.Println("Failed to subscribe to stream:", err)
 		return
 	}
 
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	for {
-		_, message, err := conn.Read(ctx)
+		// Use timeoutCtx in the Read operation
+		_, message, err := conn.Read(timeoutCtx)
 		if err != nil {
-			log.Println("Error read message:", err)
+			if websocket.CloseStatus(err) == websocket.StatusNormalClosure {
+				log.Println("WebSocket closed normally")
+			} else {
+				log.Println("Error reading message:", err)
+				msg := tgbotapi.NewMessage(chatID, "Invalid symbol. Please provide a valid symbol")
+				bot.Send(msg)
+			}
 			return
 		}
 
 		var data map[string]interface{}
 		if err := json.Unmarshal(message, &data); err != nil {
-			log.Println("Error unmarshal json:", err)
+			log.Println("Failed to unmarshal JSON:", err)
 			continue
 		}
 
@@ -172,27 +225,37 @@ func GetFundingRateCountdown(chatID int64, symbol string, bot *tgbotapi.BotAPI) 
 	// Create a background context for WebSocket connection
 	ctx := context.Background()
 	if err := connectWebSocket(BinanceFutureWSURL); err != nil {
-		log.Println("Error connect WebSocket:", err)
+		log.Println("Failed to connect to WebSocket:", err)
 		return
 	}
 	defer conn.Close(websocket.StatusNormalClosure, "closing")
 
 	stream := strings.ToLower(symbol) + "@markPrice"
 	if err := subscribeToStream(stream); err != nil {
-		log.Println("Error subscribe stream:", err)
+		log.Println("Failed to subscribe to stream:", err)
 		return
 	}
 
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	for {
-		_, message, err := conn.Read(ctx)
+		// Use timeoutCtx in the Read operation
+		_, message, err := conn.Read(timeoutCtx)
 		if err != nil {
-			log.Println("Error read message:", err)
+			if websocket.CloseStatus(err) == websocket.StatusNormalClosure {
+				log.Println("WebSocket closed normally")
+			} else {
+				log.Println("Error reading message:", err)
+				msg := tgbotapi.NewMessage(chatID, "Invalid symbol. Please provide a valid symbol")
+				bot.Send(msg)
+			}
 			return
 		}
 
 		var data map[string]interface{}
 		if err := json.Unmarshal(message, &data); err != nil {
-			log.Println("Error unmarshal json:", err)
+			log.Println("Failed to unmarshal JSON:", err)
 			continue
 		}
 
@@ -211,5 +274,70 @@ func GetFundingRateCountdown(chatID int64, symbol string, bot *tgbotapi.BotAPI) 
 			bot.Send(msg)
 			return
 		}
+	}
+}
+
+// UserConnection stores request state for each user
+type UserConnection struct {
+	isStreaming bool
+}
+
+// Tạo map để lưu trạng thái người dùng
+var userConnections = make(map[int64]*UserConnection)
+var mapMutex = sync.Mutex{}
+
+// fetchKlineData sends a GET request to the backend API with cookie for security
+func fetchKlineData(symbol, interval, cookie string, chatID int64, bot *tgbotapi.BotAPI) {
+	reqUrl := fmt.Sprintf("%s?symbols=%s&interval=%s", baseUrl, symbol, interval)
+	log.Printf("API URL: %s", reqUrl)
+	req, err := http.NewRequest("GET", reqUrl, nil)
+	if err != nil {
+		bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Request creation error: %v", err)))
+		return
+	}
+	// req.Header.Set("Accept", "*/*")
+	// req.Header.Set("Cookie", cookie)
+	services.SetHeadersWithPrice(req, cookie)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Failed to fetch Kline data: %v", err)))
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Received status code %d", resp.StatusCode)))
+		return
+	}
+
+	scanner := bufio.NewScanner(resp.Body)
+	var line string
+	for scanner.Scan() {
+		mapMutex.Lock()
+		userConn := userConnections[chatID]
+		if userConn == nil || !userConn.isStreaming {
+			mapMutex.Unlock()
+			return // Thoát vòng lặp khi isStreaming = false
+		}
+		mapMutex.Unlock()
+		// Lấy dòng dữ liệu và loại bỏ tiền tố "data:"
+		line = strings.TrimPrefix(scanner.Text(), "data:")
+
+		// Giải mã JSON
+		var klineData KlineData
+		err := json.Unmarshal([]byte(line), &klineData)
+		if err != nil {
+			// bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Error decoding response: %v", err)))
+			continue
+		}
+
+		// Gửi dữ liệu đã giải mã đến người dùng Telegram
+		klineMessage := fmt.Sprintf("Real-time Kline data:\nOpen: %s\nHigh: %s\nLow: %s\nClose: %s",
+			klineData.OpenPrice, klineData.HighPrice, klineData.LowPrice, klineData.ClosePrice)
+		bot.Send(tgbotapi.NewMessage(chatID, klineMessage))
+
+		time.Sleep(time.Second) // Tránh spam tin nhắn
 	}
 }
