@@ -3,49 +3,55 @@ name: Deploy to Heroku
 on:
   pull_request:
     branches:
-      - dev
+      - deploy/deploy-to-DO-vps
   push:
     branches:
-      - dev
+      - deploy/deploy-to-DO-vps
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Log in to Heroku Container Registry
+      # Step 1: Log in to DigitalOcean Container Registry
+      - name: Log in to DigitalOcean Container Registry
         env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          DOCKER_REGISTRY: registry.digitalocean.com/clgslsm
+          DOCKER_USERNAME: lam.tran314159@hcmut.edu.vn
+          DOCKER_PASSWORD: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         run: |
-          echo "$HEROKU_API_KEY" | docker login --username=_ --password-stdin registry.heroku.com
+          echo $DOCKER_PASSWORD | docker login $DOCKER_REGISTRY -u $DOCKER_USERNAME --password-stdin
 
-      - name: Build and push Docker image to Heroku
+      # Step 2: Build Docker image and push to DigitalOcean Container Registry
+      - name: Build and push Docker image
         env:
-          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
+          DOCKER_REGISTRY: registry.digitalocean.com/clgslsm
         run: |
-          docker build -t registry.heroku.com/$HEROKU_APP_NAME/web .
-          docker push registry.heroku.com/$HEROKU_APP_NAME/web
+          docker build -t $DOCKER_REGISTRY/coin-price-telegram-bot:latest .
+          docker push $DOCKER_REGISTRY/coin-price-telegram-bot:latest
 
-      - name: Set Heroku stack to container
+      # Step 3: Deploy the bot on the self-hosted runner (DigitalOcean droplet)
+      - name: Run Docker container
         env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
+          DOCKER_REGISTRY: registry.digitalocean.com/clgslsm
         run: |
-          heroku stack:set container --app $HEROKU_APP_NAME
-
-      - name: Release to Heroku
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
-        run: |
-          heroku container:release web --app $HEROKU_APP_NAME
-
-      - name: Check app status
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
-        run: |
-          heroku ps --app $HEROKU_APP_NAME
+          # Stop and remove any existing container
+          docker stop coin-price-telegram-bot || true
+          docker rm coin-price-telegram-bot || true
+          
+          # Import environment variables from github secrets
+          export BOT_TOKEN=${{ secrets.BOT_TOKEN }}
+          export DATABASE_URL=${{ secrets.DATABASE_URL }}
+          export GO_ENV=production
+          export PORT=8443
+          export WEBHOOK_URL=${{ secrets.WEBHOOK_URL }}
+          
+          
+          # Pull the latest version of the image
+          docker pull $DOCKER_REGISTRY/coin-price-telegram-bot:latest
+          
+          # Run the container with necessary configurations
+          docker run -d --name coin-price-telegram-bot -p 8443:8443 $DOCKER_REGISTRY/coin-price-telegram-bot:latest
