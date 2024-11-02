@@ -42,16 +42,14 @@ jobs:
           docker stop coin-price-telegram-bot || true
           docker rm coin-price-telegram-bot || true
           
-          # Import environment variables from github secrets
-          export BOT_TOKEN=${{ secrets.BOT_TOKEN }}
-          export DATABASE_URL=${{ secrets.DATABASE_URL }}
-          export GO_ENV=production
-          export PORT=8443
-          export WEBHOOK_URL=${{ secrets.WEBHOOK_URL }}
-          
-          
           # Pull the latest version of the image
           docker pull $DOCKER_REGISTRY/coin-price-telegram-bot:latest
           
           # Run the container with necessary configurations
-          docker run -d --name coin-price-telegram-bot -p 8443:8443 $DOCKER_REGISTRY/coin-price-telegram-bot:latest
+          docker run -d --name coin-price-telegram-bot -p 8443:8443 \
+            -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
+            -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+            -e GO_ENV=production \
+            -e PORT=8443 \
+            -e WEBHOOK_URL=${{ secrets.WEBHOOK_URL }} \
+            $DOCKER_REGISTRY/coin-price-telegram-bot:latest
