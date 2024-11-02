@@ -128,6 +128,12 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 
 		symbol := args[0]
 		text := fmt.Sprintf("Hãy chọn thông tin mà bạn muốn xem cho %s:", symbol)
+		
+		err := services.StoreUserSymbol(int(user.ID), symbol)
+		if err != nil {
+			log.Println("Error storing symbol:", err)
+		}
+		
 		msg := tgbotapi.NewMessage(chatID, text)
 		msg.ReplyMarkup = GetPriceMenu()
 		msg.ParseMode = "HTML"

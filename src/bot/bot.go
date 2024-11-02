@@ -148,6 +148,7 @@ func Start(ctx context.Context, bot *tgbotapi.BotAPI) {
 
 // Start listening update from webhook
 func StartWebhook(bot *tgbotapi.BotAPI) {
+	//fmt.Println("StartWebhook in")
 	//Create the update channel using ListenForWebhook
 	updates := bot.ListenForWebhook("/webhook")
 	for update := range updates {
@@ -157,10 +158,12 @@ func StartWebhook(bot *tgbotapi.BotAPI) {
 			handlers.HandleButton(update.CallbackQuery, bot)
 		}
 	}
+	//fmt.Println("StartWebhook out")
 }
 
 // Receive updates and pass them to handlers
 func receiveUpdates(ctx context.Context, updates tgbotapi.UpdatesChannel) {
+	//fmt.Println("receiveUpdates in")
 	for {
 		select {
 		case <-ctx.Done():
@@ -173,6 +176,7 @@ func receiveUpdates(ctx context.Context, updates tgbotapi.UpdatesChannel) {
 			}
 		}
 	}
+	//fmt.Println("receiveUpdates out")
 }
 
 func PriceUpdateHandler(w http.ResponseWriter, r *http.Request) {

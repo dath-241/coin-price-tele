@@ -19,7 +19,6 @@ const (
 	APIBaseURL_Spot_Price    = "https://hcmutssps.id.vn/api/get-spot-price"
 	APIBaseURL_Futures_Price = "https://hcmutssps.id.vn/api/get-future-price"
 	APIBaseURL_Funding_Rate  = "https://hcmutssps.id.vn/api/get-funding-rate"
-	//CookieToken              = "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJNSyIsInN1YiI6InRyYW5odXkiLCJwYXNzd29yZCI6ImFpIGNobyBjb2kgbeG6rXQga2jhuql1IiwiZXhwIjoxNzMwMzkyNTE1fQ.qXZk4x_zDnRMqMWw6JJEj7jBhIhtAzBO3-n17heH5Hk"
 )
 
 type SpotPriceResponse struct {
@@ -116,7 +115,20 @@ func FormatPrice1(a string) string {
 
 	return a
 }
+// test ( api BE error)
+// func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
+// 	bot.Send(tgbotapi.NewMessage(chatID, "spot price"))
+// }
 
+// func GetFuturesPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
+// 	bot.Send(tgbotapi.NewMessage(chatID, "futures price"))
+// }
+
+// func GetFundingRateStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
+// 	bot.Send(tgbotapi.NewMessage(chatID, "funding rate"))
+// }
+
+// api BE ok
 func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
 
 	// Create a cancellable context
