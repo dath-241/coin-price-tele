@@ -71,10 +71,6 @@ var commands = []tgbotapi.BotCommand{
 		Command:     "funding_rate",
 		Description: "<symbol>",
 	},
-	{
-		Command:     "funding_rate_countdown",
-		Description: "<symbol>",
-	},
 	//----------------------------------------------------------------------------------------
 	{
 		Command:     "alert_price_with_threshold",
