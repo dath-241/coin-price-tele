@@ -5,7 +5,6 @@ go 1.23.1
 require (
 	github.com/coder/websocket v1.8.12
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
-	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 	github.com/stretchr/testify v1.9.0

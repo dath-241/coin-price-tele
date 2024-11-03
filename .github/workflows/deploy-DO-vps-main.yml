@@ -3,10 +3,10 @@ name: Deploy to Heroku
 on:
   pull_request:
     branches:
-      - deploy/deploy-to-DO-vps
+      - main
   push:
     branches:
-      - deploy/deploy-to-DO-vps
+      - main
 
 jobs:
   deploy:
