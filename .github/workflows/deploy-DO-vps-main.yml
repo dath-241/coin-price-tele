@@ -1,0 +1,55 @@
+name: Deploy to Heroku
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Step 1: Log in to DigitalOcean Container Registry
+      - name: Log in to DigitalOcean Container Registry
+        env:
+          DOCKER_REGISTRY: registry.digitalocean.com/clgslsm
+          DOCKER_USERNAME: lam.tran314159@hcmut.edu.vn
+          DOCKER_PASSWORD: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+        run: |
+          echo $DOCKER_PASSWORD | docker login $DOCKER_REGISTRY -u $DOCKER_USERNAME --password-stdin
+
+      # Step 2: Build Docker image and push to DigitalOcean Container Registry
+      - name: Build and push Docker image
+        env:
+          DOCKER_REGISTRY: registry.digitalocean.com/clgslsm
+        run: |
+          docker build -t $DOCKER_REGISTRY/coin-price-telegram-bot:latest .
+          docker push $DOCKER_REGISTRY/coin-price-telegram-bot:latest
+
+      # Step 3: Deploy the bot on the self-hosted runner (DigitalOcean droplet)
+      - name: Run Docker container
+        env:
+          DOCKER_REGISTRY: registry.digitalocean.com/clgslsm
+        run: |
+          # Stop and remove any existing container
+          docker stop coin-price-telegram-bot || true
+          docker rm coin-price-telegram-bot || true
+          
+          # Pull the latest version of the image
+          docker pull $DOCKER_REGISTRY/coin-price-telegram-bot:latest
+          
+          # Run the container with necessary configurations
+          docker run -d --name coin-price-telegram-bot -p 8443:8443 \
+            -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
+            -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+            -e GO_ENV=production \
+            -e PORT=8443 \
+            -e WEBHOOK_URL=${{ secrets.WEBHOOK_URL }} \
+            $DOCKER_REGISTRY/coin-price-telegram-bot:latest
