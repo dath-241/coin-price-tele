@@ -3,19 +3,22 @@ package handlers
 import (
 	"log"
 	"telegram-bot/services"
-	
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 // Handle inline button clicks
 func HandleButton(query *tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
-	
+
 	symbol := globalSymbol
 
 	var text string
 
 	token, err := services.GetUserToken(int(query.From.ID))
+	// if token == "" || err != nil {
+	// 	msg := tgbotapi.NewMessage(chatID, "You need to authenticate before executing this command.")
+	// 	bot.Send(msg)
+	// }
 	if err != nil {
 		log.Println("Error getting user token:", err)
 	}

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 
-
 	"telegram-bot/services"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -19,8 +18,8 @@ func init() {
 }
 
 var (
-    globalSymbol string
-    symbolMutex  sync.RWMutex
+	globalSymbol string
+	symbolMutex  sync.RWMutex
 )
 
 // Handle incoming messages (commands or regular text)
@@ -152,8 +151,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		symbolMutex.Lock()
 		globalSymbol = symbol
 		symbolMutex.Unlock()
-
-		
+		Menu := fmt.Sprintf("<i>Menu</i>\n\n<b>                                                         %s       </b>\n\nPlease select the information you want to view:", globalSymbol)
 		msg := tgbotapi.NewMessage(chatID, Menu)
 		msg.ReplyMarkup = GetPriceMenu()
 		msg.ParseMode = "HTML"

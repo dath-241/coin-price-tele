@@ -8,9 +8,9 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-const (
-	Menu = "<i>Menu </i>\n\n<b>Please select the information you want to view:</b>"
-)
+// const (
+// 	Menu = "<i>Menu </i>\n\n<b>Please select the information you want to view:</b>"
+// )
 
 const (
 	spotPriceButton    = "🟢 |  Spot Price"
@@ -39,13 +39,13 @@ func HelperMenuPrices(message *tgbotapi.Message, bot *tgbotapi.BotAPI, token str
 	//fmt.Println("HelperMenuPrices in")
 	chatID := message.Chat.ID
 
-	fmt.Printf("Processing request for symbol: %s\n", symbol)
-	fmt.Printf("Message text: %s\n", message.Text)
+	//fmt.Printf("Processing request for symbol: %s\n", symbol)
+	//fmt.Printf("Message text: %s\n", message.Text)
 
 	var err error
 	switch message.Text {
 	case callbackSpotPrice:
-		fmt.Println("Processing spot price request")
+		//fmt.Println("Processing spot price request")
 		go GetSpotPriceStream(chatID, symbol, bot, token)
 	case callbackFuturesPrice:
 		go GetFuturesPriceStream(chatID, symbol, bot, token)
@@ -76,7 +76,6 @@ func HandlePriceCallback(callback *tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI,
 		return fmt.Errorf("error answering callback query: %v", err)
 	}
 
-	// Gọi trực tiếp HelperMenuPrices với callback.Data
 	message := &tgbotapi.Message{
 		Chat: &tgbotapi.Chat{ID: chatID},
 		Text: callback.Data,
