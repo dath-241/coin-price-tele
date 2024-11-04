@@ -36,6 +36,7 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 		handleCommand(message.Chat.ID, command, args, bot, user)
 	} else {
 		closestSymbol := FindClosestSymbol1(text, SpotSymbols)
+		closestSymbol1 := FindClosestSymbol1(text, FuturesSymbols)
 
 		if closestSymbol == "" {
 			fmt.Printf("No symbol found.")
@@ -48,7 +49,7 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 			handleCommand(message.Chat.ID, message1, args, bot, user)
 
 			message2 := "/price_futures"
-			args = []string{closestSymbol}
+			args = []string{closestSymbol1}
 			handleCommand(message.Chat.ID, message2, args, bot, user)
 
 		}
