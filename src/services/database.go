@@ -67,19 +67,3 @@ func GetUserToken(userID int) (string, error) {
 	}
 	return token, nil
 }
-
-// Thêm các hàm mới để xử lý symbol
-func StoreUserSymbol(userID int, symbol string) error {
-	_, err := db.Exec(`INSERT INTO user_symbols (user_id, symbol) VALUES ($1, $2)
-		ON CONFLICT (user_id) DO UPDATE SET symbol = EXCLUDED.symbol`, userID, symbol)
-	return err
-}
-
-func GetUserSymbol(userID int) (string, error) {
-	var symbol string
-	err := db.QueryRow(`SELECT symbol FROM user_symbols WHERE user_id = $1`, userID).Scan(&symbol)
-	if err != nil {
-		return "", err
-	}
-	return symbol, nil
-}
