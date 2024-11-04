@@ -19,8 +19,6 @@ const (
 	BinanceFutureWSURL = "wss://fstream.binance.com/ws"
 )
 
-const baseUrl = "https://hcmutssps.id.vn/api/vip1/get-kline"
-
 var conn *websocket.Conn
 
 func connectWebSocket(url string) error {

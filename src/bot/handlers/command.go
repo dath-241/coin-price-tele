@@ -35,21 +35,27 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 		args := parts[1:]
 		handleCommand(message.Chat.ID, command, args, bot, user)
 	} else {
+		closestSymbol := FindClosestSymbol1(text, SpotSymbols)
+		if closestSymbol != "" {
+			fmt.Printf("Closest symbol found: %s\n", closestSymbol)
+		} else {
+			fmt.Println("No symbol found.")
 		// _, err := bot.Send(copyMessage(message))
 		// if err != nil {
 		// 	log.Println("Error sending message:", err)
 		// }
 
-		parts := strings.Fields(text)
-		if len(parts) > 0 {
-			command := parts[0]
-			args := parts[1:]
-			handleCommand(message.Chat.ID, "/"+command, args, bot, user)
-		} else {
-			_, err := bot.Send(copyMessage(message))
-			if err != nil {
-				log.Println("Error sending message:", err)
-			}
+// 		parts := strings.Fields(text)
+// 		if len(parts) > 0 {
+// 			command := parts[0]
+// 			args := parts[1:]
+// 			handleCommand(message.Chat.ID, "/"+command, args, bot, user)
+// 		} else {
+// 			_, err := bot.Send(copyMessage(message))
+// 			if err != nil {
+// 				log.Println("Error sending message:", err)
+// 			}
+
 		}
 
 	}
@@ -145,9 +151,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			bot.Send(msg)
 			return
 		}
-
 		symbol := args[0]
-
 		symbolMutex.Lock()
 		globalSymbol = symbol
 		symbolMutex.Unlock()
