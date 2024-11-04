@@ -22,7 +22,6 @@ const (
 	APIBaseURL_Funding_Rate  = "https://hcmutssps.id.vn/api/get-funding-rate"
 )
 
-
 var SpotSymbols []string
 var FuturesSymbols []string
 
@@ -35,6 +34,7 @@ type ExchangeInfo struct {
 	Symbols []struct {
 		Symbol string `json:"symbol"`
 	} `json:"symbols"`
+}
 
 type ErrorMessage struct {
 	Code    string `json:"code"`
