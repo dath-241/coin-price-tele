@@ -6,6 +6,9 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
+
+
 	"telegram-bot/services"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -14,6 +17,11 @@ import (
 func init() {
 	services.InitDB()
 }
+
+var (
+    globalSymbol string
+    symbolMutex  sync.RWMutex
+)
 
 // Handle incoming messages (commands or regular text)
 func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
@@ -28,10 +36,23 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 		args := parts[1:]
 		handleCommand(message.Chat.ID, command, args, bot, user)
 	} else {
-		_, err := bot.Send(copyMessage(message))
-		if err != nil {
-			log.Println("Error sending message:", err)
+		// _, err := bot.Send(copyMessage(message))
+		// if err != nil {
+		// 	log.Println("Error sending message:", err)
+		// }
+
+		parts := strings.Fields(text)
+		if len(parts) > 0 {
+			command := parts[0]
+			args := parts[1:]
+			handleCommand(message.Chat.ID, "/"+command, args, bot, user)
+		} else {
+			_, err := bot.Send(copyMessage(message))
+			if err != nil {
+				log.Println("Error sending message:", err)
+			}
 		}
+
 	}
 }
 
@@ -128,11 +149,11 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 
 		symbol := args[0]
 
-		err := services.StoreUserSymbol(int(user.ID), symbol)
-		if err != nil {
-			log.Println("Error storing symbol:", err)
-		}
+		symbolMutex.Lock()
+		globalSymbol = symbol
+		symbolMutex.Unlock()
 
+		
 		msg := tgbotapi.NewMessage(chatID, Menu)
 		msg.ReplyMarkup = GetPriceMenu()
 		msg.ParseMode = "HTML"

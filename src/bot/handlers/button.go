@@ -3,23 +3,21 @@ package handlers
 import (
 	"log"
 	"telegram-bot/services"
+	
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 // Handle inline button clicks
 func HandleButton(query *tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
-	//log.Println("HandleButton in")
+	
+	symbol := globalSymbol
+
 	var text string
 
 	token, err := services.GetUserToken(int(query.From.ID))
 	if err != nil {
 		log.Println("Error getting user token:", err)
-	}
-
-	symbol, err := services.GetUserSymbol(int(query.From.ID))
-	if err != nil {
-		log.Println("Error getting user symbol:", err)
 	}
 
 	//log.Println("symbol in HandleButton:", symbol)
@@ -35,6 +33,7 @@ func HandleButton(query *tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
 		markup = firstMenuMarkup
 	} else {
 		HandlePriceCallback(query, bot, token, symbol)
+		return
 	}
 
 	callbackCfg := tgbotapi.NewCallback(query.ID, "")
@@ -48,7 +47,6 @@ func HandleButton(query *tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
 	msg.ParseMode = tgbotapi.ModeHTML
 	_, err = bot.Send(msg)
 	if err != nil {
-		log.Println("Error editing message:", err)
+		log.Println("Error editing message 1111:", err)
 	}
-	//log.Println("HandleButton out")
 }

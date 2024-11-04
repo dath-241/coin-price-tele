@@ -34,15 +34,6 @@ func GetPriceMenu() tgbotapi.InlineKeyboardMarkup {
 	)
 }
 
-// UserState lưu trữ trạng thái của người dùng
-type UserState struct {
-	AwaitingSymbol bool
-	PriceType      string
-}
-
-// userStates lưu trữ trạng thái của tất cả người dùng
-var userStates = make(map[int64]*UserState)
-
 // HandleMessage xử lý tin nhắn văn bản từ người dùng
 func HelperMenuPrices(message *tgbotapi.Message, bot *tgbotapi.BotAPI, token string, symbol string) error {
 	//fmt.Println("HelperMenuPrices in")
@@ -55,11 +46,11 @@ func HelperMenuPrices(message *tgbotapi.Message, bot *tgbotapi.BotAPI, token str
 	switch message.Text {
 	case callbackSpotPrice:
 		fmt.Println("Processing spot price request")
-		GetSpotPriceStream(chatID, symbol, bot, token)
+		go GetSpotPriceStream(chatID, symbol, bot, token)
 	case callbackFuturesPrice:
-		GetFuturesPriceStream(chatID, symbol, bot, token)
+		go GetFuturesPriceStream(chatID, symbol, bot, token)
 	case callbackFundingRate:
-		GetFundingRateStream(chatID, symbol, bot, token)
+		go GetFundingRateStream(chatID, symbol, bot, token)
 	default:
 		err = fmt.Errorf("unknown price type: %s", message.Text)
 	}
