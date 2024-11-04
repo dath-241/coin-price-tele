@@ -28,9 +28,11 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 		args := parts[1:]
 		handleCommand(message.Chat.ID, command, args, bot, user)
 	} else {
-		_, err := bot.Send(copyMessage(message))
-		if err != nil {
-			log.Println("Error sending message:", err)
+		closestSymbol := FindClosestSymbol1(text, SpotSymbols)
+		if closestSymbol != "" {
+			fmt.Printf("Closest symbol found: %s\n", closestSymbol)
+		} else {
+			fmt.Println("No symbol found.")
 		}
 	}
 }
@@ -128,7 +130,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		symbol := args[0]
 		closestSymbol := FindClosestSymbol(symbol, SpotSymbols)
 		if closestSymbol != "" {
-			fmt.Printf("Closest symbol found: %s\n", closestSymbol)
+			//fmt.Printf("Closest symbol found: %s\n", closestSymbol)
 		} else {
 			fmt.Println("No symbol found.")
 		}

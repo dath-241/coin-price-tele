@@ -465,3 +465,19 @@ func FindClosestSymbol(input string, symbols []string) string {
 
 	return ""
 }
+
+func FindClosestSymbol1(input string, symbols []string) string {
+	suffixes := []string{"", "USDT", "USDC", "BTC"}
+
+	for _, suffix := range suffixes {
+		targetSymbol := strings.ToUpper(input + suffix)
+		//log.Printf("Target symbol: %s", targetSymbol)
+		for _, symbol := range symbols {
+			if targetSymbol == symbol {
+				return symbol
+			}
+		}
+	}
+
+	return ""
+}
