@@ -48,7 +48,13 @@ func HelperMenuPrices(message *tgbotapi.Message, bot *tgbotapi.BotAPI, token str
 		//fmt.Println("Processing spot price request")
 		go GetSpotPriceStream(chatID, symbol, bot, token)
 	case callbackFuturesPrice:
-		go GetFuturesPriceStream(chatID, symbol, bot, token)
+		closestSymbol := FindClosestSymbol1(symbol, FuturesSymbols)
+		if closestSymbol != "" {
+			go GetFuturesPriceStream(chatID, closestSymbol, bot, token)
+		} else {
+			fmt.Println("No symbol found.")
+		}
+		//go GetFuturesPriceStream(chatID, symbol, bot, token)
 	case callbackFundingRate:
 		go GetFundingRateStream(chatID, symbol, bot, token)
 	default:
@@ -80,7 +86,9 @@ func HandlePriceCallback(callback *tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI,
 		Chat: &tgbotapi.Chat{ID: chatID},
 		Text: callback.Data,
 	}
-	go HelperMenuPrices(message, bot, token, symbol)
+
+	HelperMenuPrices(message, bot, token, symbol)
+
 
 	//fmt.Println("HandlePriceCallback out")
 	return nil

@@ -35,23 +35,27 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 		args := parts[1:]
 		handleCommand(message.Chat.ID, command, args, bot, user)
 	} else {
+		closestSymbol := FindClosestSymbol1(text, SpotSymbols)
+
+		if closestSymbol == "" {
+			fmt.Printf("No symbol found.")
+			//msg := tgbotapi.NewMessage(chatID, "No symbol found.")
+			//bot.Send(msg)
+			return
+		} else {
+			message1 := "/price_spot"
+			args := []string{closestSymbol}
+			handleCommand(message.Chat.ID, message1, args, bot, user)
+
+			message2 := "/price_futures"
+			args = []string{closestSymbol}
+			handleCommand(message.Chat.ID, message2, args, bot, user)
+
+		}
 		// _, err := bot.Send(copyMessage(message))
 		// if err != nil {
 		// 	log.Println("Error sending message:", err)
 		// }
-
-		parts := strings.Fields(text)
-		if len(parts) > 0 {
-			command := parts[0]
-			args := parts[1:]
-			handleCommand(message.Chat.ID, "/"+command, args, bot, user)
-		} else {
-			_, err := bot.Send(copyMessage(message))
-			if err != nil {
-				log.Println("Error sending message:", err)
-			}
-		}
-
 	}
 }
 
@@ -147,17 +151,23 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		}
 
 		symbol := args[0]
-
-		symbolMutex.Lock()
-		globalSymbol = symbol
-		symbolMutex.Unlock()
-		Menu := fmt.Sprintf("<i>Menu</i>\n\n<b>                                                         %s       </b>\n\nPlease select the information you want to view:", globalSymbol)
-		msg := tgbotapi.NewMessage(chatID, Menu)
-		msg.ReplyMarkup = GetPriceMenu()
-		msg.ParseMode = "HTML"
-
-		if _, err := bot.Send(msg); err != nil {
-			log.Println("Error sending message:", err)
+		closestSymbol := FindClosestSymbol1(symbol, FuturesSymbols)
+		if closestSymbol == "" {
+			log.Println("No symbol found.")
+			msg := tgbotapi.NewMessage(chatID, "No symbol found.")
+			bot.Send(msg)
+			return
+		} else {
+			symbolMutex.Lock()
+			globalSymbol = closestSymbol
+			symbolMutex.Unlock()
+			Menu := fmt.Sprintf("<i>Menu</i>\n\n<b>                                                         %s       </b>\n\nPlease select the information you want to view:", globalSymbol)
+			msg := tgbotapi.NewMessage(chatID, Menu)
+			msg.ReplyMarkup = GetPriceMenu()
+			msg.ParseMode = "HTML"
+			if _, err := bot.Send(msg); err != nil {
+				log.Println("Error sending message:", err)
+			}
 		}
 	case "/price_spot":
 		token, err := services.GetUserToken(int(user.ID))
