@@ -86,7 +86,9 @@ func HandlePriceCallback(callback *tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI,
 		Chat: &tgbotapi.Chat{ID: chatID},
 		Text: callback.Data,
 	}
+
 	HelperMenuPrices(message, bot, token, symbol)
+
 
 	//fmt.Println("HandlePriceCallback out")
 	return nil

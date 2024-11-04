@@ -149,6 +149,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			bot.Send(msg)
 			return
 		}
+
 		symbol := args[0]
 		closestSymbol := FindClosestSymbol1(symbol, FuturesSymbols)
 		if closestSymbol == "" {

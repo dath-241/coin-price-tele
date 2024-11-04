@@ -22,6 +22,7 @@ const (
 	APIBaseURL_Funding_Rate  = "https://hcmutssps.id.vn/api/get-funding-rate"
 )
 
+
 var SpotSymbols []string
 var FuturesSymbols []string
 
