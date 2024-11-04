@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -21,6 +22,20 @@ const (
 	APIBaseURL_Funding_Rate  = "https://hcmutssps.id.vn/api/get-funding-rate"
 	//CookieToken              = "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJNSyIsInN1YiI6InRyYW5odXkiLCJwYXNzd29yZCI6ImFpIGNobyBjb2kgbeG6rXQga2jhuql1IiwiZXhwIjoxNzMwMzkyNTE1fQ.qXZk4x_zDnRMqMWw6JJEj7jBhIhtAzBO3-n17heH5Hk"
 )
+
+var SpotSymbols []string
+var FuturesSymbols []string
+
+const (
+	SpotExchangeInfoURL    = "https://api.binance.com/api/v3/exchangeInfo"
+	FuturesExchangeInfoURL = "https://fapi.binance.com/fapi/v1/exchangeInfo"
+)
+
+type ExchangeInfo struct {
+	Symbols []struct {
+		Symbol string `json:"symbol"`
+	} `json:"symbols"`
+}
 
 type SpotPriceResponse struct {
 	Price     string `json:"price"`
@@ -400,4 +415,53 @@ func GetFundingRateStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, tok
 		log.Printf("Error reading stream: %v", err)
 		//bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Symbol is not available. Please provide a valid symbol.")))
 	}
+}
+
+// Function to get available symbols from Binance API
+func GetAvailableSymbols(exchangeInfoURL string) ([]string, error) {
+	resp, err := http.Get(exchangeInfoURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var exchangeInfo ExchangeInfo
+	if err := json.Unmarshal(body, &exchangeInfo); err != nil {
+		return nil, err
+	}
+
+	var symbols []string
+	for _, symbol := range exchangeInfo.Symbols {
+		//log.Printf("Symbol: %s", symbol.Symbol)
+		symbols = append(symbols, symbol.Symbol)
+	}
+	return symbols, nil
+}
+
+// Function to find the closest symbol
+func FindClosestSymbol(input string, symbols []string) string {
+	suffixes := []string{"USDT", "USDC", "BTC"}
+
+	for _, suffix := range suffixes {
+		targetSymbol := strings.ToUpper(input + suffix)
+		//log.Printf("Target symbol: %s", targetSymbol)
+		for _, symbol := range symbols {
+			if targetSymbol == symbol {
+				return symbol
+			}
+		}
+	}
+
+	for _, symbol := range symbols {
+		if strings.Contains(strings.ToUpper(symbol), strings.ToUpper(input)) {
+			return symbol
+		}
+	}
+
+	return ""
 }

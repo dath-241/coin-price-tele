@@ -119,6 +119,19 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		if err != nil {
 			log.Println("Error sending message:", err)
 		}
+	case "/p":
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /p <symbol>")
+			bot.Send(msg)
+			return
+		}
+		symbol := args[0]
+		closestSymbol := FindClosestSymbol(symbol, SpotSymbols)
+		if closestSymbol != "" {
+			fmt.Printf("Closest symbol found: %s\n", closestSymbol)
+		} else {
+			fmt.Println("No symbol found.")
+		}
 
 	case "/price_spot":
 		token, err := services.GetUserToken(int(user.ID))
