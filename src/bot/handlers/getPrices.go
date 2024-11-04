@@ -66,7 +66,6 @@ func formatPrice(input string) string {
 
 	parts := strings.Split(input, ".")
 
-	// Xử lý phần nguyên
 	intPart := parts[0]
 	n := len(intPart)
 	if n <= 3 {
@@ -101,7 +100,7 @@ func intToString(n int) string {
 }
 
 func FormatPrice1(a string) string {
-	// Lặp từ cuối chuỗi và loại bỏ các số 0 ở cuối
+
 	for i := len(a) - 1; i >= 0; i-- {
 		if a[i] != '0' {
 			if a[i] == '.' {
@@ -109,12 +108,12 @@ func FormatPrice1(a string) string {
 			}
 			return a
 		}
-		// Nếu ký tự cuối là '0', loại bỏ ký tự đó
 		a = a[:i]
 	}
 
 	return a
 }
+
 // test ( api BE error)
 // func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
 // 	bot.Send(tgbotapi.NewMessage(chatID, "spot price"))
@@ -128,7 +127,6 @@ func FormatPrice1(a string) string {
 // 	bot.Send(tgbotapi.NewMessage(chatID, "funding rate"))
 // }
 
-// api BE ok
 func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
 
 	// Create a cancellable context

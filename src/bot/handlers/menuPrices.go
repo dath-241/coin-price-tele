@@ -9,9 +9,13 @@ import (
 )
 
 const (
-	spotPriceButton    = "Spot price"
-	futuresPriceButton = "Futures price"
-	fundingRateButton  = "Funding rate"
+	Menu = "<i>Menu </i>\n\n<b>Please select the information you want to view:</b>"
+)
+
+const (
+	spotPriceButton    = "🟢 |  Spot Price"
+	futuresPriceButton = "🔴 |  Futures Price"
+	fundingRateButton  = "⚖️ |  Funding Rate"
 )
 
 const (
