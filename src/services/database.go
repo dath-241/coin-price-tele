@@ -41,6 +41,14 @@ func InitDB() {
 	if err != nil {
 		log.Fatal("Error creating table:", err)
 	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS user_symbols (
+        user_id BIGINT PRIMARY KEY,
+        symbol TEXT
+    )`)
+	if err != nil {
+		log.Fatal("Error creating user_symbols table:", err)
+	}
 }
 
 // Store the token in the database

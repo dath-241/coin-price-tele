@@ -19,8 +19,12 @@ const (
 	APIBaseURL_Spot_Price    = "https://hcmutssps.id.vn/api/get-spot-price"
 	APIBaseURL_Futures_Price = "https://hcmutssps.id.vn/api/get-future-price"
 	APIBaseURL_Funding_Rate  = "https://hcmutssps.id.vn/api/get-funding-rate"
-	//CookieToken              = "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJNSyIsInN1YiI6InRyYW5odXkiLCJwYXNzd29yZCI6ImFpIGNobyBjb2kgbeG6rXQga2jhuql1IiwiZXhwIjoxNzMwMzkyNTE1fQ.qXZk4x_zDnRMqMWw6JJEj7jBhIhtAzBO3-n17heH5Hk"
 )
+
+type ErrorMessage struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
 
 type SpotPriceResponse struct {
 	Price     string `json:"price"`
@@ -67,7 +71,6 @@ func formatPrice(input string) string {
 
 	parts := strings.Split(input, ".")
 
-	// Xử lý phần nguyên
 	intPart := parts[0]
 	n := len(intPart)
 	if n <= 3 {
@@ -102,7 +105,7 @@ func intToString(n int) string {
 }
 
 func FormatPrice1(a string) string {
-	// Lặp từ cuối chuỗi và loại bỏ các số 0 ở cuối
+
 	for i := len(a) - 1; i >= 0; i-- {
 		if a[i] != '0' {
 			if a[i] == '.' {
@@ -110,12 +113,24 @@ func FormatPrice1(a string) string {
 			}
 			return a
 		}
-		// Nếu ký tự cuối là '0', loại bỏ ký tự đó
 		a = a[:i]
 	}
 
 	return a
 }
+
+// test ( api BE error)
+// func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
+// 	bot.Send(tgbotapi.NewMessage(chatID, "spot price"))
+// }
+
+// func GetFuturesPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
+// 	bot.Send(tgbotapi.NewMessage(chatID, "futures price"))
+// }
+
+// func GetFundingRateStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
+// 	bot.Send(tgbotapi.NewMessage(chatID, "funding rate"))
+// }
 
 func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
 
@@ -153,7 +168,31 @@ func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("Received status code %d", resp.StatusCode)
 		if resp.StatusCode == 500 {
-			msg := tgbotapi.NewMessage(chatID, "You need to authenticate before executing this command.")
+			errorMsg := ErrorMessage{
+				Code:    "500",
+				Message: "You need to authenticate before executing this command.",
+			}
+			jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+			if err != nil {
+				fmt.Println("Error encoding JSON:", err)
+			}
+			formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+			msg := tgbotapi.NewMessage(chatID, formattedMsg)
+			msg.ParseMode = "MarkdownV2"
+			bot.Send(msg)
+		}
+		if resp.StatusCode == 404 {
+			errorMsg := ErrorMessage{
+				Code:    "404",
+				Message: "Symbol is not available.",
+			}
+			jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+			if err != nil {
+				fmt.Println("Error encoding JSON:", err)
+			}
+			formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+			msg := tgbotapi.NewMessage(chatID, formattedMsg)
+			msg.ParseMode = "MarkdownV2"
 			bot.Send(msg)
 		}
 		return
@@ -250,7 +289,31 @@ func GetFuturesPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, to
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("Received status code %d", resp.StatusCode)
 		if resp.StatusCode == 500 {
-			msg := tgbotapi.NewMessage(chatID, "You need to authenticate before executing this command.")
+			errorMsg := ErrorMessage{
+				Code:    "500",
+				Message: "You need to authenticate before executing this command.",
+			}
+			jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+			if err != nil {
+				fmt.Println("Error encoding JSON:", err)
+			}
+			formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+			msg := tgbotapi.NewMessage(chatID, formattedMsg)
+			msg.ParseMode = "MarkdownV2"
+			bot.Send(msg)
+		}
+		if resp.StatusCode == 404 {
+			errorMsg := ErrorMessage{
+				Code:    "404",
+				Message: "Symbol is not available.",
+			}
+			jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+			if err != nil {
+				fmt.Println("Error encoding JSON:", err)
+			}
+			formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+			msg := tgbotapi.NewMessage(chatID, formattedMsg)
+			msg.ParseMode = "MarkdownV2"
 			bot.Send(msg)
 		}
 		return
@@ -346,7 +409,31 @@ func GetFundingRateStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, tok
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("Received status code %d", resp.StatusCode)
 		if resp.StatusCode == 500 {
-			msg := tgbotapi.NewMessage(chatID, "You need to authenticate before executing this command.")
+			errorMsg := ErrorMessage{
+				Code:    "500",
+				Message: "You need to authenticate before executing this command.",
+			}
+			jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+			if err != nil {
+				fmt.Println("Error encoding JSON:", err)
+			}
+			formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+			msg := tgbotapi.NewMessage(chatID, formattedMsg)
+			msg.ParseMode = "MarkdownV2"
+			bot.Send(msg)
+		}
+		if resp.StatusCode == 404 {
+			errorMsg := ErrorMessage{
+				Code:    "404",
+				Message: "Symbol is not available.",
+			}
+			jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+			if err != nil {
+				fmt.Println("Error encoding JSON:", err)
+			}
+			formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+			msg := tgbotapi.NewMessage(chatID, formattedMsg)
+			msg.ParseMode = "MarkdownV2"
 			bot.Send(msg)
 		}
 		return
