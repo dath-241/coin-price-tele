@@ -42,6 +42,7 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 			fmt.Printf("No symbol found.")
 			//msg := tgbotapi.NewMessage(chatID, "No symbol found.")
 			//bot.Send(msg)
+			//
 			return
 		} else {
 			message1 := "/price_spot"
