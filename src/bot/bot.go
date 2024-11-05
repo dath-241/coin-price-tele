@@ -32,6 +32,14 @@ var commands = []tgbotapi.BotCommand{
 		Description: "Log in to the bot",
 	},
 	{
+		Command: 	"register",
+		Description: "Register new user",
+	},
+	{
+		Command: 	"forgotpassword",
+		Description: "Send OTP to email to get new password",
+	},
+	{
 		Command:     "getinfo",
 		Description: "Get user information",
 	},
