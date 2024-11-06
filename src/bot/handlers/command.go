@@ -35,8 +35,8 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 		args := parts[1:]
 		handleCommand(message.Chat.ID, command, args, bot, user)
 	} else {
-		closestSymbol := FindClosestSymbol1(text, SpotSymbols)
-		closestSymbol1 := FindClosestSymbol1(text, FuturesSymbols)
+		closestSymbol := FindSpotSymbol(text)
+		closestSymbol1 := FindFuturesSymbol(text)
 
 		if closestSymbol == "" {
 			fmt.Printf("No symbol found.")
@@ -152,15 +152,12 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			return
 		}
 
-		GetSpotSymbols()
-		GetFuturesSymbols()
-
 		// Add logging to check symbols
 		// log.Printf("Input symbol: %s", args[0])
 		// log.Printf("Available SpotSymbols: %v", SpotSymbols)
 
 		symbol := args[0]
-		closestSymbol := FindSymbol(symbol, SpotSymbols)
+		closestSymbol := FindSpotSymbol(symbol)
 		if closestSymbol == "" {
 			log.Println("No symbol found.")
 			msg := tgbotapi.NewMessage(chatID, "No symbol found.")
@@ -358,3 +355,4 @@ func copyMessage(message *tgbotapi.Message) tgbotapi.MessageConfig {
 	msg := tgbotapi.NewMessage(message.Chat.ID, message.Text)
 	return msg
 }
+

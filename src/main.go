@@ -6,8 +6,6 @@ import (
 	"os"
 	"telegram-bot/bot"
 	"telegram-bot/config"
-	//"telegram-bot/services"
-
 	"github.com/joho/godotenv"
 )
 
@@ -52,6 +50,9 @@ func main() {
 	// cần xem xét để chay riêng 2 hàm này để fetch symbol  ( quan trọng)
 	// go services.FetchSpotSymbols()
 	// go services.FetchFuturesSymbols()
+	
+	// handlers.GetSpotSymbols()
+	// handlers.GetFuturesSymbols()
 
 	go http.ListenAndServe(":"+port, nil)
 	log.Printf("Bot is listening on port %s...\n", port)

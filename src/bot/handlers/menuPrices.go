@@ -46,9 +46,14 @@ func HelperMenuPrices(message *tgbotapi.Message, bot *tgbotapi.BotAPI, token str
 	switch message.Text {
 	case callbackSpotPrice:
 		//fmt.Println("Processing spot price request")
-		go GetSpotPriceStream(chatID, symbol, bot, token)
+		closestSymbol := FindSpotSymbol(symbol)
+		if closestSymbol != "" {
+			go GetSpotPriceStream(chatID, closestSymbol, bot, token)
+		} else {
+			fmt.Println("No symbol found.")
+		}
 	case callbackFuturesPrice:
-		closestSymbol := FindClosestSymbol1(symbol, FuturesSymbols)
+		closestSymbol := FindFuturesSymbol(symbol)
 		if closestSymbol != "" {
 			go GetFuturesPriceStream(chatID, closestSymbol, bot, token)
 		} else {
