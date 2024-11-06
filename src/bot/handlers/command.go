@@ -152,8 +152,15 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			return
 		}
 
+		GetSpotSymbols()
+		GetFuturesSymbols()
+
+		// Add logging to check symbols
+		// log.Printf("Input symbol: %s", args[0])
+		// log.Printf("Available SpotSymbols: %v", SpotSymbols)
+
 		symbol := args[0]
-		closestSymbol := FindClosestSymbol1(symbol, FuturesSymbols)
+		closestSymbol := FindSymbol(symbol, SpotSymbols)
 		if closestSymbol == "" {
 			log.Println("No symbol found.")
 			msg := tgbotapi.NewMessage(chatID, "No symbol found.")

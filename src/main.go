@@ -5,26 +5,26 @@ import (
 	"net/http"
 	"os"
 	"telegram-bot/bot"
-	"telegram-bot/bot/handlers"
 	"telegram-bot/config"
+	//"telegram-bot/services"
 
 	"github.com/joho/godotenv"
 )
 
-func spot_GetSymbol() {
-	var err error
-	handlers.SpotSymbols, err = handlers.GetAvailableSymbols(handlers.SpotExchangeInfoURL)
-	if err != nil {
-		log.Fatalf("Error fetching symbols: %v", err)
-	}
-}
-func future_GetSymbol() {
-	var err error
-	handlers.FuturesSymbols, err = handlers.GetAvailableSymbols(handlers.FuturesExchangeInfoURL)
-	if err != nil {
-		log.Fatalf("Error fetching symbols: %v", err)
-	}
-}
+// func spot_GetSymbol() {
+// 	var err error
+// 	handlers.SpotSymbols, err = handlers.GetAvailableSymbols(handlers.SpotExchangeInfoURL)
+// 	if err != nil {
+// 		log.Fatalf("Error fetching symbols: %v", err)
+// 	}
+// }
+// func future_GetSymbol() {
+// 	var err error
+// 	handlers.FuturesSymbols, err = handlers.GetAvailableSymbols(handlers.FuturesExchangeInfoURL)
+// 	if err != nil {
+// 		log.Fatalf("Error fetching symbols: %v", err)
+// 	}
+// }
 
 func main() {
 	if os.Getenv("GO_ENV") != "production" {
@@ -46,8 +46,13 @@ func main() {
 		port = "8443"
 	}
 	go http.HandleFunc("/backend", bot.PriceUpdateHandler)
-	spot_GetSymbol()
-	future_GetSymbol()
+	// spot_GetSymbol()
+	// future_GetSymbol()
+
+	// cần xem xét để chay riêng 2 hàm này để fetch symbol  ( quan trọng)
+	// go services.FetchSpotSymbols()
+	// go services.FetchFuturesSymbols()
+
 	go http.ListenAndServe(":"+port, nil)
 	log.Printf("Bot is listening on port %s...\n", port)
 	bot.StartWebhook(tgBot)
