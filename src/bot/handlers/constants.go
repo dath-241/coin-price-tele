@@ -38,8 +38,6 @@ var commandList = []string{
 	"/start - Authenticate and start using the bot",
 	"/login - Log in to the bot",
 	"/getinfo - Get user info",
-	"/scream - Enable screaming mode",
-	"/whisper - Disable screaming mode",
 	"/menu - Show menu with buttons",
 	"/help - Show available commands",
 	"/kline - Fetches Kline data for a specific trading pair and interval",
