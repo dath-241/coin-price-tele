@@ -7,6 +7,7 @@ import (
 	"telegram-bot/bot"
 	"telegram-bot/config"
 	"github.com/joho/godotenv"
+	"telegram-bot/services"
 )
 
 // func spot_GetSymbol() {
@@ -44,16 +45,20 @@ func main() {
 		port = "8443"
 	}
 	go http.HandleFunc("/backend", bot.PriceUpdateHandler)
+
+	
 	// spot_GetSymbol()
 	// future_GetSymbol()
 
 	// cần xem xét để chay riêng 2 hàm này để fetch symbol  ( quan trọng)
-	// go services.FetchSpotSymbols()
-	// go services.FetchFuturesSymbols()
+	// services.FetchSpotSymbols()
+	// services.FetchFuturesSymbols()
 	
 	// handlers.GetSpotSymbols()
 	// handlers.GetFuturesSymbols()
+	go services.CallSortSymbols()
 
+	
 	go http.ListenAndServe(":"+port, nil)
 	log.Printf("Bot is listening on port %s...\n", port)
 	bot.StartWebhook(tgBot)
