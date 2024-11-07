@@ -24,7 +24,6 @@ type Payload struct {
 	Threshold []float64 `json:"threshold"`
 }
 
-
 var storedChatIDs = make(map[int64]bool)
 
 //!send to BE
@@ -86,7 +85,6 @@ func SendMessageToUser(bot *tgbotapi.BotAPI, chatID int64, message string) {
 	msg := tgbotapi.NewMessage(chatID, message)
 	bot.Send(msg)
 }
-
 
 func NotifyUsers(bot *tgbotapi.BotAPI) {
     chatIDs, err := GetChatIDs()

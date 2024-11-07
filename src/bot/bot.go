@@ -60,15 +60,7 @@ var commands = []tgbotapi.BotCommand{
 		Description: "Stop receiving Kline_realtime",
 	},
 	{
-		Command:     "price_spot",
-		Description: "<symbol>",
-	},
-	{
-		Command:     "price_futures",
-		Description: "<symbol>",
-	},
-	{
-		Command:     "funding_rate",
+		Command:     "p",
 		Description: "<symbol>",
 	},
 	//----------------------------------------------------------------------------------------
