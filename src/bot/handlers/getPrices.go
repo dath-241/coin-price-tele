@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"telegram-bot/services"
 	"time"
-	"os"
-	"path/filepath"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -527,131 +528,130 @@ func GetFundingRateStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, tok
 // 	return symbols, nil
 // }
 
-func FindSpotSymbol(input string, ) string {
-    suffixes := []string{"USDT", "USDC", "BTC"}
-    
-    // Đọc file symbols
-    currentDir, err := os.Getwd()
-    if err != nil {
-        log.Printf("Error getting current directory: %v", err)
-        return ""
-    }
-    filePath := filepath.Join(currentDir, "services", "spot_symbols.txt")
-    
-    file, err := os.Open(filePath)
-    if err != nil {
-        log.Printf("Error opening spot_symbols file: %v", err)
-        return ""
-    }
-    defer file.Close()
+func FindSpotSymbol(input string) string {
+	suffixes := []string{"", "USDT", "USDC", "BTC"}
 
-    scanner := bufio.NewScanner(file)
-    // Bỏ qua 2 dòng đầu tiên
-    for i := 0; i < 2; i++ {
-        scanner.Scan()
-    }
+	// Đọc file symbols
+	currentDir, err := os.Getwd()
+	if err != nil {
+		log.Printf("Error getting current directory: %v", err)
+		return ""
+	}
+	filePath := filepath.Join(currentDir, "services", "spot_symbols_sorted.txt")
 
-    // Tìm chính xác symbol = input + suffix
-    for _, suffix := range suffixes {
-        targetSymbol := strings.ToUpper(input + suffix)
-        
-        // Reset scanner về đầu file sau mỗi suffix
-        file.Seek(0, 0)
-        scanner = bufio.NewScanner(file)
-        // Bỏ qua 2 dòng đầu
-        for i := 0; i < 2; i++ {
-            scanner.Scan()
-        }
-        
-        for scanner.Scan() {
-            symbol := strings.TrimSpace(scanner.Text())
-            if symbol == targetSymbol {
-                return symbol
-            }
-        }
-    }
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Printf("Error opening spot_symbols file: %v", err)
+		return ""
+	}
+	defer file.Close()
 
-    // Tìm symbol bắt đầu bằng input
-    upperInput := strings.ToUpper(input)
-    file.Seek(0, 0)
-    scanner = bufio.NewScanner(file)
-    // Bỏ qua 2 dòng đầu
-    for i := 0; i < 2; i++ {
-        scanner.Scan()
-    }
-    
-    for scanner.Scan() {
-        symbol := strings.TrimSpace(scanner.Text())
-        if strings.HasPrefix(symbol, upperInput) {
-            return symbol
-        }
-    }
+	scanner := bufio.NewScanner(file)
+	// Bỏ qua 2 dòng đầu tiên
+	for i := 0; i < 2; i++ {
+		scanner.Scan()
+	}
 
-    return ""
+	// Tìm chính xác symbol = input + suffix
+	for _, suffix := range suffixes {
+		targetSymbol := strings.ToUpper(input + suffix)
+
+		// Reset scanner về đầu file sau mỗi suffix
+		file.Seek(0, 0)
+		scanner = bufio.NewScanner(file)
+		// Bỏ qua 2 dòng đầu
+		for i := 0; i < 2; i++ {
+			scanner.Scan()
+		}
+
+		for scanner.Scan() {
+			symbol := strings.TrimSpace(scanner.Text())
+			if symbol == targetSymbol {
+				return symbol
+			}
+		}
+	}
+
+	// Tìm symbol bắt đầu bằng input
+	upperInput := strings.ToUpper(input)
+	file.Seek(0, 0)
+	scanner = bufio.NewScanner(file)
+	// Bỏ qua 2 dòng đầu
+	for i := 0; i < 2; i++ {
+		scanner.Scan()
+	}
+
+	for scanner.Scan() {
+		symbol := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(symbol, upperInput) {
+			return symbol
+		}
+	}
+
+	return ""
 }
 
-
 func FindFuturesSymbol(input string) string {
-    suffixes := []string{"USDT", "USDC", "BTC"}
-    
-    // Đọc file symbols
-    currentDir, err := os.Getwd()
-    if err != nil {
-        log.Printf("Error getting current directory: %v", err)
-        return ""
-    }
-    filePath := filepath.Join(currentDir, "services", "futures_symbols.txt")
-    
-    file, err := os.Open(filePath)
-    if err != nil {
-        log.Printf("Error opening spot_symbols file: %v", err)
-        return ""
-    }
-    defer file.Close()
+	suffixes := []string{"", "USDT", "USDC", "BTC"}
 
-    scanner := bufio.NewScanner(file)
-    // Bỏ qua 2 dòng đầu tiên
-    for i := 0; i < 2; i++ {
-        scanner.Scan()
-    }
+	// Đọc file symbols
+	currentDir, err := os.Getwd()
+	if err != nil {
+		log.Printf("Error getting current directory: %v", err)
+		return ""
+	}
+	filePath := filepath.Join(currentDir, "services", "futures_symbols_sorted.txt")
 
-    // Tìm chính xác symbol = input + suffix
-    for _, suffix := range suffixes {
-        targetSymbol := strings.ToUpper(input + suffix)
-        
-        // Reset scanner về đầu file sau mỗi suffix
-        file.Seek(0, 0)
-        scanner = bufio.NewScanner(file)
-        // Bỏ qua 2 dòng đầu
-        for i := 0; i < 2; i++ {
-            scanner.Scan()
-        }
-        
-        for scanner.Scan() {
-            symbol := strings.TrimSpace(scanner.Text())
-            if symbol == targetSymbol {
-                return symbol
-            }
-        }
-    }
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Printf("Error opening spot_symbols file: %v", err)
+		return ""
+	}
+	defer file.Close()
 
-    // Tìm symbol bắt đầu bằng input
-    upperInput := strings.ToUpper(input)
-    file.Seek(0, 0)
-    scanner = bufio.NewScanner(file)
-    // Bỏ qua 2 dòng đầu
-    for i := 0; i < 2; i++ {
-        scanner.Scan()
-    }
-    
-    for scanner.Scan() {
-        symbol := strings.TrimSpace(scanner.Text())
-        if strings.HasPrefix(symbol, upperInput) {
-            return symbol
-        }
-    }
+	scanner := bufio.NewScanner(file)
+	// Bỏ qua 2 dòng đầu tiên
+	for i := 0; i < 2; i++ {
+		scanner.Scan()
+	}
 
-    return ""
+	// Tìm chính xác symbol = input + suffix
+	for _, suffix := range suffixes {
+		targetSymbol := strings.ToUpper(input + suffix)
+
+		// Reset scanner về đầu file sau mỗi suffix
+		file.Seek(0, 0)
+		scanner = bufio.NewScanner(file)
+		// Bỏ qua 2 dòng đầu
+		for i := 0; i < 2; i++ {
+			scanner.Scan()
+		}
+
+		for scanner.Scan() {
+			symbol := strings.TrimSpace(scanner.Text())
+			if symbol == targetSymbol {
+				return symbol
+			}
+		}
+	}
+
+	// Tìm symbol bắt đầu bằng input
+	upperInput := strings.ToUpper(input)
+	file.Seek(0, 0)
+	scanner = bufio.NewScanner(file)
+	// Bỏ qua 2 dòng đầu
+	for i := 0; i < 2; i++ {
+		scanner.Scan()
+	}
+
+	for scanner.Scan() {
+		symbol := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(symbol, upperInput) {
+			return symbol
+		}
+	}
+
+	return ""
 }
 
 // Function to find the closest symbol
@@ -693,73 +693,4 @@ func FindClosestSymbol1(input string, symbols []string) string {
 	return ""
 }
 
-
-// func GetSpotSymbols() {
-//     // Đọc symbols từ file
-
-// 	currentDir, err := os.Getwd()
-//     if err != nil {
-//         fmt.Printf("Error getting current directory: %v\n", err)
-//         return
-//     }
-// 	filePath := filepath.Join(currentDir, "services", "spot_symbols.txt")
-
-//     file, err := os.Open(filePath)
-//     if err != nil {
-//         log.Printf("Error opening spot_symbols file: %v", err)
-//         return
-//     }
-//     defer file.Close()
-
-//     scanner := bufio.NewScanner(file)
-//     // Bỏ qua 2 dòng đầu tiên
-//     for i := 0; i < 2; i++ {
-//         scanner.Scan()
-//     }
-    
-//     // Đọc các symbols từ dòng thứ 3
-//     for scanner.Scan() {
-//         symbol := scanner.Text()
-//         if symbol != "" {
-//             SpotSymbols = append(SpotSymbols, symbol)
-//         }
-//     }
-
-//     if err := scanner.Err(); err != nil {
-//         log.Printf("Error reading spot_symbols file: %v", err)
-// 	}
-// }
-
-// func GetFuturesSymbols() {
-// 	currentDir, err := os.Getwd()
-//     if err != nil {
-//         fmt.Printf("Error getting current directory: %v\n", err)
-//         return
-//     }
-// 	filePath := filepath.Join(currentDir, "services", "futures_symbols.txt")
-
-//     file, err := os.Open(filePath)
-//     if err != nil {
-//         log.Printf("Error opening futures_symbols file: %v", err)
-//         return
-//     }
-//     defer file.Close()
-
-//     scanner := bufio.NewScanner(file)
-//     // Bỏ qua 2 dòng đầu tiên
-//     for i := 0; i < 2; i++ {
-//         scanner.Scan()
-//     }
-    
-//     // Đọc các symbols từ dòng thứ 3
-//     for scanner.Scan() {
-//         symbol := scanner.Text()
-//         if symbol != "" {
-//             FuturesSymbols = append(FuturesSymbols, symbol)
-//         }
-//     }
-
-//     if err := scanner.Err(); err != nil {
-//         log.Printf("Error reading futures_symbols file: %v", err)
-// 	}
-// }
+//

@@ -61,7 +61,13 @@ func HelperMenuPrices(message *tgbotapi.Message, bot *tgbotapi.BotAPI, token str
 		}
 		//go GetFuturesPriceStream(chatID, symbol, bot, token)
 	case callbackFundingRate:
-		go GetFundingRateStream(chatID, symbol, bot, token)
+		closestSymbol := FindFuturesSymbol(symbol)
+		if closestSymbol != "" {
+			go GetFundingRateStream(chatID, closestSymbol, bot, token)
+		} else {
+			fmt.Println("No symbol found.")
+		}
+		//go GetFundingRateStream(chatID, symbol, bot, token)
 	default:
 		err = fmt.Errorf("unknown price type: %s", message.Text)
 	}

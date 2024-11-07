@@ -158,6 +158,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 
 		symbol := args[0]
 		closestSymbol := FindSpotSymbol(symbol)
+		nameSymbol := strings.ToUpper(symbol)
 		if closestSymbol == "" {
 			log.Println("No symbol found.")
 			msg := tgbotapi.NewMessage(chatID, "No symbol found.")
@@ -165,9 +166,9 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			return
 		} else {
 			symbolMutex.Lock()
-			globalSymbol = closestSymbol
+			globalSymbol = nameSymbol
 			symbolMutex.Unlock()
-			Menu := fmt.Sprintf("<i>Menu</i>\n\n<b>                                                         %s       </b>\n\nPlease select the information you want to view:", globalSymbol)
+			Menu := fmt.Sprintf("<i>Menu</i>\n\n<b>                                                         %s       </b>\n\nPlease select the information you want to view:", nameSymbol)
 			msg := tgbotapi.NewMessage(chatID, Menu)
 			msg.ReplyMarkup = GetPriceMenu()
 			msg.ParseMode = "HTML"
@@ -355,4 +356,3 @@ func copyMessage(message *tgbotapi.Message) tgbotapi.MessageConfig {
 	msg := tgbotapi.NewMessage(message.Chat.ID, message.Text)
 	return msg
 }
-
