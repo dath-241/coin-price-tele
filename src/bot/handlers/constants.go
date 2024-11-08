@@ -47,3 +47,11 @@ var commandList = []string{
 	"/kline_realtime <symbol> <interval> Get realtime Kline data",
 	"/stop - stop receiving data from kline-realtime",
 }
+
+type UserInfo struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	VipRole  int    `json:"vipRole"`
+	Username string `json:"username"`
+	Coin     int    `json:"coin"`
+}

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	// "context"
+
 	"fmt"
 	"log"
 	"strconv"
@@ -93,12 +94,16 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 
 		username := args[0]
 		password := args[1]
-		response, token, err := services.LogIn(username, password)
+		_, token, err := services.LogIn(username, password)
 
 		if err != nil {
 			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error logging in: "+err.Error()))
 		} else {
-			_, _ = bot.Send(tgbotapi.NewMessage(chatID, response))
+			successMessage := "🎉 Đăng nhập thành công. 🎉"
+			_, err = bot.Send(tgbotapi.NewMessage(chatID, successMessage))
+			if err != nil {
+				log.Println("Error sending message:", err)
+			}
 			err = services.StoreUserToken(int(user.ID), token)
 			// Log the token
 			log.Println("Token:", token)
@@ -116,7 +121,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		if err != nil {
 			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error getting user info: "+err.Error()))
 		} else {
-			_, _ = bot.Send(tgbotapi.NewMessage(chatID, response))
+			handleUserInfo(chatID, bot, response)
 		}
 	case "/kline":
 		if len(args) < 2 {
