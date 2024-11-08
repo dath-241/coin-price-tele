@@ -1,4 +1,3 @@
----
 # Coin-Price-Telegram-Bot
 
 ## Giới thiệu
@@ -21,4 +20,3 @@ Dự án này nhằm cung cấp cho người dùng một công cụ nhanh chóng
 - **Thông báo Funding Rate**: Thông báo khi Funding Rate của một cặp tiền đạt đến ngưỡng do người dùng thiết lập.
 - **Quản lý các trigger (kích hoạt)**: Xem, xóa hoặc quản lý các trigger được thiết lập như giá spot, futures, hoặc Funding Rate.
 
----
