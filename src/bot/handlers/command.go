@@ -125,7 +125,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		}
 	case "/kline":
 		if len(args) < 2 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /kline <symbol> <interval> [limit] [startTime] [endTime]")
+			msg := tgbotapi.NewMessage(chatID, "Usage: /kline <symbol> <interval> [limit]")
 			bot.Send(msg)
 			return
 		}
