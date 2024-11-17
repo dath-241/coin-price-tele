@@ -97,7 +97,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		_, token, err := services.LogIn(username, password)
 
 		if err != nil {
-			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error logging in: "+err.Error()))
+			bot.Send(tgbotapi.NewMessage(chatID, "Error logging in: "+err.Error()))
 		} else {
 			successMessage := "🎉 Đăng nhập thành công. 🎉"
 			_, err = bot.Send(tgbotapi.NewMessage(chatID, successMessage))
@@ -111,6 +111,72 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 				log.Println("Error storing token:", err)
 			}
 		}
+	case "/register":
+		//syntax /signup <email> <name> <username> <password>
+		if len(args) < 4 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /signup <email> <name> <username> <password>")
+			bot.Send(msg)
+			return
+		}
+		email := args[0]
+		name := args[1]
+		username := args[2]
+		password := args[3]
+		response, err := services.Regsiter(email, name, username, password)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		} else {
+			bot.Send(tgbotapi.NewMessage(chatID, response))
+			bot.Send(tgbotapi.NewMessage(chatID, "use /login to log in"))
+		}
+
+	case "/forgotpassword":
+		//syntax /forgotpassword <username>
+		//!cho OTP r lm j nua ?
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /forgotpassword <username>")
+			bot.Send(msg)
+			return
+		}
+		username := args[0]
+		response, err := services.ForgotPassword(username)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		} else {
+			bot.Send(tgbotapi.NewMessage(chatID, response))
+		}
+	case "/testingadmin":
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /forgotpassword <username>")
+			bot.Send(msg)
+			return
+		}
+		username := args[0]
+		token, err := services.GetUserToken(int(chatID))
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		}
+		response, err := services.Testadmin(username, token)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		} else {
+			bot.Send(tgbotapi.NewMessage(chatID, response))
+		}
+		
+
+	case "/changepassword":
+		//syntax: /changepassword <old_password> <new_password> <confirm_newpassword>
+		// if len(args) < 3 {
+		// 	msg := tgbotapi.NewMessage(chatID, "Usage: /changepassword <old_password> <new_password> <confirm_newpassword>")
+		// 	bot.Send(msg)
+		// 	return
+		// }
+		// old_password := args[0]
+		// new_password := args[1]
+		// confirm_newpassword := args[2]
+
+	case "/changeinfo":
+		bot.Send(tgbotapi.NewMessage(chatID, "In Progress"))
 	case "/getinfo":
 		token, err := services.GetUserToken(int(user.ID))
 		if err != nil {
