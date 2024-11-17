@@ -119,6 +119,7 @@ func Regsiter(email, name, username, password string) (string, error){
 }
 
 func ForgotPassword(username string) (string, error){
+	//?OTP
 	url := "http://hcmutssps.id.vn/auth/forgotPassword?username=" + username
 	resp, err := http.Get(url)
 	if err != nil {
@@ -166,21 +167,21 @@ func Testadmin(username, token string) (string, error){
 				return "", fmt.Errorf("error reading response body: %v", err)
 			}
 
-			var respond RespondBody
-			if err := json.Unmarshal(message, &respond); err != nil {
-				return "", fmt.Errorf("error unmarshalling response: %v", err)
-			}
+			// var respond RespondBody
+			// if err := json.Unmarshal(message, &respond); err != nil {
+			// 	return "", fmt.Errorf("error unmarshalling response: %v", err)
+			// }
 			if resp.StatusCode == http.StatusBadRequest {
-				return "", fmt.Errorf("%s", respond.Message)
+				return "", fmt.Errorf("%s", string(message))
 			}
 			if resp.StatusCode == http.StatusOK {
-		_, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return "", err
+			_, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return "", err
+				}
+			return string(message), nil
 		}
-		return respond.Message, nil
-	}
-	return "", fmt.Errorf("something wrong?")
+		return "", fmt.Errorf(string(message))
 }
 
 func SetHeaders(req *http.Request, token string) {
