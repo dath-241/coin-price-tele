@@ -2,10 +2,13 @@ package handlers
 
 import (
 	// "context"
+
 	"fmt"
 	"log"
 	"strconv"
 	"strings"
+	"sync"
+
 	"telegram-bot/services"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -14,6 +17,11 @@ import (
 func init() {
 	services.InitDB()
 }
+
+var (
+	globalSymbol string
+	symbolMutex  sync.RWMutex
+)
 
 // Handle incoming messages (commands or regular text)
 func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
@@ -28,10 +36,29 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 		args := parts[1:]
 		handleCommand(message.Chat.ID, command, args, bot, user)
 	} else {
-		_, err := bot.Send(copyMessage(message))
-		if err != nil {
-			log.Println("Error sending message:", err)
+		closestSymbol := FindSpotSymbol(text)
+		closestSymbol1 := FindFuturesSymbol(text)
+
+		if closestSymbol == "" {
+			fmt.Printf("No symbol found.")
+			//msg := tgbotapi.NewMessage(chatID, "No symbol found.")
+			//bot.Send(msg)
+			//
+			return
+		} else {
+			message1 := "/price_spot"
+			args := []string{closestSymbol}
+			handleCommand(message.Chat.ID, message1, args, bot, user)
+
+			message2 := "/price_futures"
+			args = []string{closestSymbol1}
+			handleCommand(message.Chat.ID, message2, args, bot, user)
+
 		}
+		// _, err := bot.Send(copyMessage(message))
+		// if err != nil {
+		// 	log.Println("Error sending message:", err)
+		// }
 	}
 }
 
@@ -67,12 +94,16 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 
 		username := args[0]
 		password := args[1]
-		response, token, err := services.LogIn(username, password)
+		_, token, err := services.LogIn(username, password)
 
 		if err != nil {
 			bot.Send(tgbotapi.NewMessage(chatID, "Error logging in: "+err.Error()))
 		} else {
-			bot.Send(tgbotapi.NewMessage(chatID, response))
+			successMessage := "🎉 Đăng nhập thành công. 🎉"
+			_, err = bot.Send(tgbotapi.NewMessage(chatID, successMessage))
+			if err != nil {
+				log.Println("Error sending message:", err)
+			}
 			err = services.StoreUserToken(int(user.ID), token)
 			// Log the token
 			log.Println("Token:", token)
@@ -156,11 +187,11 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		if err != nil {
 			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error getting user info: "+err.Error()))
 		} else {
-			_, _ = bot.Send(tgbotapi.NewMessage(chatID, response))
+			handleUserInfo(chatID, bot, response)
 		}
 	case "/kline":
 		if len(args) < 2 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /kline <symbol> <interval> [limit] [startTime] [endTime]")
+			msg := tgbotapi.NewMessage(chatID, "Usage: /kline <symbol> <interval> [limit]")
 			bot.Send(msg)
 			return
 		}
@@ -185,7 +216,37 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		if err != nil {
 			log.Println("Error sending message:", err)
 		}
+	case "/p":
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /p <symbol>")
+			bot.Send(msg)
+			return
+		}
 
+		// Add logging to check symbols
+		// log.Printf("Input symbol: %s", args[0])
+		// log.Printf("Available SpotSymbols: %v", SpotSymbols)
+
+		symbol := args[0]
+		closestSymbol := FindSpotSymbol(symbol)
+		nameSymbol := strings.ToUpper(symbol)
+		if closestSymbol == "" {
+			log.Println("No symbol found.")
+			msg := tgbotapi.NewMessage(chatID, "No symbol found.")
+			bot.Send(msg)
+			return
+		} else {
+			symbolMutex.Lock()
+			globalSymbol = nameSymbol
+			symbolMutex.Unlock()
+			Menu := fmt.Sprintf("<i>Menu</i>\n\n<b>                                                         %s       </b>\n\nPlease select the information you want to view:", nameSymbol)
+			msg := tgbotapi.NewMessage(chatID, Menu)
+			msg.ReplyMarkup = GetPriceMenu()
+			msg.ParseMode = "HTML"
+			if _, err := bot.Send(msg); err != nil {
+				log.Println("Error sending message:", err)
+			}
+		}
 	case "/price_spot":
 		token, err := services.GetUserToken(int(user.ID))
 		if err != nil {

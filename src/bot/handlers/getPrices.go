@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"telegram-bot/services"
@@ -19,8 +21,23 @@ const (
 	APIBaseURL_Spot_Price    = "https://hcmutssps.id.vn/api/get-spot-price"
 	APIBaseURL_Futures_Price = "https://hcmutssps.id.vn/api/get-future-price"
 	APIBaseURL_Funding_Rate  = "https://hcmutssps.id.vn/api/get-funding-rate"
-	//CookieToken              = "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJNSyIsInN1YiI6InRyYW5odXkiLCJwYXNzd29yZCI6ImFpIGNobyBjb2kgbeG6rXQga2jhuql1IiwiZXhwIjoxNzMwMzkyNTE1fQ.qXZk4x_zDnRMqMWw6JJEj7jBhIhtAzBO3-n17heH5Hk"
 )
+
+const (
+	SpotExchangeInfoURL    = "https://api.binance.com/api/v3/exchangeInfo"
+	FuturesExchangeInfoURL = "https://fapi.binance.com/fapi/v1/exchangeInfo"
+)
+
+type ExchangeInfo struct {
+	Symbols []struct {
+		Symbol string `json:"symbol"`
+	} `json:"symbols"`
+}
+
+type ErrorMessage struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
 
 type SpotPriceResponse struct {
 	Price     string `json:"price"`
@@ -67,7 +84,6 @@ func formatPrice(input string) string {
 
 	parts := strings.Split(input, ".")
 
-	// Xử lý phần nguyên
 	intPart := parts[0]
 	n := len(intPart)
 	if n <= 3 {
@@ -102,7 +118,7 @@ func intToString(n int) string {
 }
 
 func FormatPrice1(a string) string {
-	// Lặp từ cuối chuỗi và loại bỏ các số 0 ở cuối
+
 	for i := len(a) - 1; i >= 0; i-- {
 		if a[i] != '0' {
 			if a[i] == '.' {
@@ -110,12 +126,24 @@ func FormatPrice1(a string) string {
 			}
 			return a
 		}
-		// Nếu ký tự cuối là '0', loại bỏ ký tự đó
 		a = a[:i]
 	}
 
 	return a
 }
+
+// test ( api BE error)
+// func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
+// 	bot.Send(tgbotapi.NewMessage(chatID, "spot price"))
+// }
+
+// func GetFuturesPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
+// 	bot.Send(tgbotapi.NewMessage(chatID, "futures price"))
+// }
+
+// func GetFundingRateStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
+// 	bot.Send(tgbotapi.NewMessage(chatID, "funding rate"))
+// }
 
 func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
 
@@ -153,7 +181,31 @@ func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("Received status code %d", resp.StatusCode)
 		if resp.StatusCode == 500 {
-			msg := tgbotapi.NewMessage(chatID, "You need to authenticate before executing this command.")
+			errorMsg := ErrorMessage{
+				Code:    "500",
+				Message: "You need to authenticate before executing this command.",
+			}
+			jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+			if err != nil {
+				fmt.Println("Error encoding JSON:", err)
+			}
+			formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+			msg := tgbotapi.NewMessage(chatID, formattedMsg)
+			msg.ParseMode = "MarkdownV2"
+			bot.Send(msg)
+		}
+		if resp.StatusCode == 404 {
+			errorMsg := ErrorMessage{
+				Code:    "404",
+				Message: "Symbol is not available.",
+			}
+			jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+			if err != nil {
+				fmt.Println("Error encoding JSON:", err)
+			}
+			formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+			msg := tgbotapi.NewMessage(chatID, formattedMsg)
+			msg.ParseMode = "MarkdownV2"
 			bot.Send(msg)
 		}
 		return
@@ -250,7 +302,31 @@ func GetFuturesPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, to
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("Received status code %d", resp.StatusCode)
 		if resp.StatusCode == 500 {
-			msg := tgbotapi.NewMessage(chatID, "You need to authenticate before executing this command.")
+			errorMsg := ErrorMessage{
+				Code:    "500",
+				Message: "You need to authenticate before executing this command.",
+			}
+			jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+			if err != nil {
+				fmt.Println("Error encoding JSON:", err)
+			}
+			formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+			msg := tgbotapi.NewMessage(chatID, formattedMsg)
+			msg.ParseMode = "MarkdownV2"
+			bot.Send(msg)
+		}
+		if resp.StatusCode == 404 {
+			errorMsg := ErrorMessage{
+				Code:    "404",
+				Message: "Symbol is not available.",
+			}
+			jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+			if err != nil {
+				fmt.Println("Error encoding JSON:", err)
+			}
+			formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+			msg := tgbotapi.NewMessage(chatID, formattedMsg)
+			msg.ParseMode = "MarkdownV2"
 			bot.Send(msg)
 		}
 		return
@@ -346,7 +422,31 @@ func GetFundingRateStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, tok
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("Received status code %d", resp.StatusCode)
 		if resp.StatusCode == 500 {
-			msg := tgbotapi.NewMessage(chatID, "You need to authenticate before executing this command.")
+			errorMsg := ErrorMessage{
+				Code:    "500",
+				Message: "You need to authenticate before executing this command.",
+			}
+			jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+			if err != nil {
+				fmt.Println("Error encoding JSON:", err)
+			}
+			formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+			msg := tgbotapi.NewMessage(chatID, formattedMsg)
+			msg.ParseMode = "MarkdownV2"
+			bot.Send(msg)
+		}
+		if resp.StatusCode == 404 {
+			errorMsg := ErrorMessage{
+				Code:    "404",
+				Message: "Symbol is not available.",
+			}
+			jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+			if err != nil {
+				fmt.Println("Error encoding JSON:", err)
+			}
+			formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+			msg := tgbotapi.NewMessage(chatID, formattedMsg)
+			msg.ParseMode = "MarkdownV2"
 			bot.Send(msg)
 		}
 		return
@@ -401,3 +501,196 @@ func GetFundingRateStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, tok
 		//bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Symbol is not available. Please provide a valid symbol.")))
 	}
 }
+
+// Function to get available symbols from Binance API
+// func GetAvailableSymbols(exchangeInfoURL string) ([]string, error) {
+// 	resp, err := http.Get(exchangeInfoURL)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer resp.Body.Close()
+
+// 	body, err := ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	var exchangeInfo ExchangeInfo
+// 	if err := json.Unmarshal(body, &exchangeInfo); err != nil {
+// 		return nil, err
+// 	}
+
+// 	var symbols []string
+// 	for _, symbol := range exchangeInfo.Symbols {
+// 		//log.Printf("Symbol: %s", symbol.Symbol)
+// 		symbols = append(symbols, symbol.Symbol)
+// 	}
+// 	return symbols, nil
+// }
+
+func FindSpotSymbol(input string) string {
+	suffixes := []string{"", "USDT", "USDC", "BTC"}
+
+	// Đọc file symbols
+	currentDir, err := os.Getwd()
+	if err != nil {
+		log.Printf("Error getting current directory: %v", err)
+		return ""
+	}
+	filePath := filepath.Join(currentDir, "services", "spot_symbols_sorted.txt")
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Printf("Error opening spot_symbols file: %v", err)
+		return ""
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	// Bỏ qua 2 dòng đầu tiên
+	for i := 0; i < 2; i++ {
+		scanner.Scan()
+	}
+
+	// Tìm chính xác symbol = input + suffix
+	for _, suffix := range suffixes {
+		targetSymbol := strings.ToUpper(input + suffix)
+
+		// Reset scanner về đầu file sau mỗi suffix
+		file.Seek(0, 0)
+		scanner = bufio.NewScanner(file)
+		// Bỏ qua 2 dòng đầu
+		for i := 0; i < 2; i++ {
+			scanner.Scan()
+		}
+
+		for scanner.Scan() {
+			symbol := strings.TrimSpace(scanner.Text())
+			if symbol == targetSymbol {
+				return symbol
+			}
+		}
+	}
+
+	// Tìm symbol bắt đầu bằng input
+	upperInput := strings.ToUpper(input)
+	file.Seek(0, 0)
+	scanner = bufio.NewScanner(file)
+	// Bỏ qua 2 dòng đầu
+	for i := 0; i < 2; i++ {
+		scanner.Scan()
+	}
+
+	for scanner.Scan() {
+		symbol := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(symbol, upperInput) {
+			return symbol
+		}
+	}
+
+	return ""
+}
+
+func FindFuturesSymbol(input string) string {
+	suffixes := []string{"", "USDT", "USDC", "BTC"}
+
+	// Đọc file symbols
+	currentDir, err := os.Getwd()
+	if err != nil {
+		log.Printf("Error getting current directory: %v", err)
+		return ""
+	}
+	filePath := filepath.Join(currentDir, "services", "futures_symbols_sorted.txt")
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Printf("Error opening spot_symbols file: %v", err)
+		return ""
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	// Bỏ qua 2 dòng đầu tiên
+	for i := 0; i < 2; i++ {
+		scanner.Scan()
+	}
+
+	// Tìm chính xác symbol = input + suffix
+	for _, suffix := range suffixes {
+		targetSymbol := strings.ToUpper(input + suffix)
+
+		// Reset scanner về đầu file sau mỗi suffix
+		file.Seek(0, 0)
+		scanner = bufio.NewScanner(file)
+		// Bỏ qua 2 dòng đầu
+		for i := 0; i < 2; i++ {
+			scanner.Scan()
+		}
+
+		for scanner.Scan() {
+			symbol := strings.TrimSpace(scanner.Text())
+			if symbol == targetSymbol {
+				return symbol
+			}
+		}
+	}
+
+	// Tìm symbol bắt đầu bằng input
+	upperInput := strings.ToUpper(input)
+	file.Seek(0, 0)
+	scanner = bufio.NewScanner(file)
+	// Bỏ qua 2 dòng đầu
+	for i := 0; i < 2; i++ {
+		scanner.Scan()
+	}
+
+	for scanner.Scan() {
+		symbol := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(symbol, upperInput) {
+			return symbol
+		}
+	}
+
+	return ""
+}
+
+// Function to find the closest symbol
+func FindClosestSymbol(input string, symbols []string) string {
+	suffixes := []string{"USDT", "USDC", "BTC"}
+
+	for _, suffix := range suffixes {
+		targetSymbol := strings.ToUpper(input + suffix)
+		//log.Printf("Target symbol: %s", targetSymbol)
+		for _, symbol := range symbols {
+			if targetSymbol == symbol {
+				return symbol
+			}
+		}
+	}
+
+	for _, symbol := range symbols {
+		if strings.Contains(strings.ToUpper(symbol), strings.ToUpper(input)) {
+			return symbol
+		}
+	}
+
+	return ""
+}
+
+func FindClosestSymbol1(input string, symbols []string) string {
+	suffixes := []string{"", "USDT", "USDC", "BTC"}
+
+	for _, suffix := range suffixes {
+		targetSymbol := strings.ToUpper(input + suffix)
+		//log.Printf("Target symbol: %s", targetSymbol)
+		for _, symbol := range symbols {
+			if targetSymbol == symbol {
+				return symbol
+			}
+		}
+	}
+
+	return ""
+}
+
+//

@@ -38,12 +38,20 @@ var commandList = []string{
 	"/start - Authenticate and start using the bot",
 	"/login - Log in to the bot",
 	"/getinfo - Get user info",
+	"/menu - Show menu with buttons",
 	"/help - Show available commands",
 	"/kline - Fetches Kline data for a specific trading pair and interval",
-	"/price_spot - Retrieve the latest spot price of a symbol",
-	"/price_futures - Retrieve the latest futures price of a symbol",
-	"/funding_rate - Displays all information about funding rate",
-	"/kline <symbol> <interval> [limit] [startTime] [endTime] - Get Kline data for a symbol",
+	"/p <symbol> - Fetches the price and funding rate of a specific trading pair",
+	"<symbol> - Fetches the price a specific trading pair",
+	"/kline <symbol> <interval> [limit] - Get Kline data for a symbol",
 	"/kline_realtime <symbol> <interval> Get realtime Kline data",
 	"/stop - stop receiving data from kline-realtime",
+}
+
+type UserInfo struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	VipRole  int    `json:"vipRole"`
+	Username string `json:"username"`
+	Coin     int    `json:"coin"`
 }
