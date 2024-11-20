@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	APIBaseURL_Spot_Price    = "https://hcmutssps.id.vn/api/get-spot-price"
-	APIBaseURL_Futures_Price = "https://hcmutssps.id.vn/api/get-future-price"
-	APIBaseURL_Funding_Rate  = "https://hcmutssps.id.vn/api/get-funding-rate"
+	APIBaseURL_Spot_Price    = "https://dath.hcmutssps.id.vn/api/get-spot-price"
+	APIBaseURL_Futures_Price = "https://dath.hcmutssps.id.vn/api/get-future-price"
+	APIBaseURL_Funding_Rate  = "https://dath.hcmutssps.id.vn/api/get-funding-rate"
 )
 
 const (

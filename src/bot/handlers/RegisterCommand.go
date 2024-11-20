@@ -18,7 +18,7 @@ type ErrorResponse struct {
 }
 
 func RegisterPriceThreshold(ID int64, symbol string, threshold float64, is_lower bool, price_type string, bot *tgbotapi.BotAPI) error {
-	url := fmt.Sprintf("https://hcmutssps.id.vn/api/vip2/create?triggerType=%s", price_type)
+	url := fmt.Sprintf("https://dath.hcmutssps.id.vn/api/vip2/create?triggerType=%s", price_type)
 	fmt.Println("price_type:", price_type)
 	method := "POST"
 
@@ -80,7 +80,7 @@ func RegisterPriceThreshold(ID int64, symbol string, threshold float64, is_lower
 }
 
 func RegisterPriceDifferenceAndFundingRate(ID int64, symbol string, threshold float64, is_lower bool, Type string, bot *tgbotapi.BotAPI) error {
-	url := fmt.Sprintf("https://hcmutssps.id.vn/api/vip2/create?triggerType=%s", Type)
+	url := fmt.Sprintf("https://dath.hcmutssps.id.vn/api/vip2/create?triggerType=%s", Type)
 	fmt.Println("Type:", Type)
 	method := "POST"
 
@@ -168,7 +168,7 @@ type AllTriggerResponse struct {
 }
 
 func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
-	url := "https://hcmutssps.id.vn/api/vip2/get/alerts"
+	url := "https://dath.hcmutssps.id.vn/api/vip2/get/alerts"
 	method := "GET"
 
 	client := &http.Client{}
@@ -238,7 +238,7 @@ func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
 }
 
 func DeleteTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type string) {
-	url := fmt.Sprintf("https://hcmutssps.id.vn/api/vip2/delete/%s?triggerType=%s", symbol, price_type)
+	url := fmt.Sprintf("https://dath.hcmutssps.id.vn/api/vip2/delete/%s?triggerType=%s", symbol, price_type)
 	method := "DELETE"
 
 	client := &http.Client{}
@@ -276,11 +276,9 @@ func DeleteTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type str
 func removeTrailingZeros(n float64) string {
 	// Convert float to string with maximum precision
 	str := fmt.Sprintf("%f", n)
-	
+
 	// Remove trailing zeros after decimal point
 	str = strings.TrimRight(strings.TrimRight(str, "0"), ".")
-	
+
 	return str
 }
-
-

@@ -33,7 +33,7 @@ func AuthenticateUser(telegramId int64) (string, error) {
 }
 
 func LogIn(username, password string) (string, string, error) {
-	url, _ := url.Parse("http://hcmutssps.id.vn/auth/login")
+	url, _ := url.Parse(apiUrl + "/auth/login")
 
 	body := map[string]string{
 		"username": username,
@@ -62,7 +62,7 @@ func LogIn(username, password string) (string, string, error) {
 	if resp.StatusCode == http.StatusBadRequest {
 		return "", "", fmt.Errorf("%s", respond.Message)
 	}
-	
+
 	if resp.StatusCode == http.StatusOK {
 		_, err := io.ReadAll(resp.Body)
 		if err != nil {
@@ -74,11 +74,11 @@ func LogIn(username, password string) (string, string, error) {
 	return "", "", fmt.Errorf("invalid username or password")
 }
 
-func Regsiter(email, name, username, password string) (string, error){
-	url := "http://hcmutssps.id.vn/auth/register"
+func Regsiter(email, name, username, password string) (string, error) {
+	url := apiUrl + "/auth/register"
 	body := map[string]string{
-		"email" : email,
-		"name" : name,
+		"email":    email,
+		"name":     name,
 		"username": username,
 		"password": password,
 	}
@@ -106,7 +106,7 @@ func Regsiter(email, name, username, password string) (string, error){
 	if resp.StatusCode == http.StatusBadRequest {
 		return "", fmt.Errorf("%s", respond.Message)
 	}
-	
+
 	if resp.StatusCode == http.StatusOK {
 		_, err := io.ReadAll(resp.Body)
 		if err != nil {
@@ -118,9 +118,9 @@ func Regsiter(email, name, username, password string) (string, error){
 	return "", fmt.Errorf("something wrong?")
 }
 
-func ForgotPassword(username string) (string, error){
+func ForgotPassword(username string) (string, error) {
 	//?OTP
-	url := "http://hcmutssps.id.vn/auth/forgotPassword?username=" + username
+	url := apiUrl + "/auth/forgotPassword?username=" + username
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -148,40 +148,40 @@ func ForgotPassword(username string) (string, error){
 	return "", fmt.Errorf("something wrong?")
 }
 
-func Testadmin(username, token string) (string, error){
-	url := "http://hcmutssps.id.vn/admin/removeUserByUsername?username=" + username
-			req, err := http.NewRequest("DELETE", url, nil)
-			if err != nil {
-				return "", err
-			}
-			// Optionally, set headers if needed
-			req.Header.Set("Authorization", token) // Example header
-			// Send the request
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				return "", fmt.Errorf("error sending request: %v", err)
-			}
-			defer resp.Body.Close()
-			message, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return "", fmt.Errorf("error reading response body: %v", err)
-			}
+func Testadmin(username, token string) (string, error) {
+	url := apiUrl + "/admin/removeUserByUsername?username=" + username
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return "", err
+	}
+	// Optionally, set headers if needed
+	req.Header.Set("Authorization", token) // Example header
+	// Send the request
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("error sending request: %v", err)
+	}
+	defer resp.Body.Close()
+	message, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error reading response body: %v", err)
+	}
 
-			// var respond RespondBody
-			// if err := json.Unmarshal(message, &respond); err != nil {
-			// 	return "", fmt.Errorf("error unmarshalling response: %v", err)
-			// }
-			if resp.StatusCode == http.StatusBadRequest {
-				return "", fmt.Errorf("%s", string(message))
-			}
-			if resp.StatusCode == http.StatusOK {
-			_, err := io.ReadAll(resp.Body)
-				if err != nil {
-					return "", err
-				}
-			return string(message), nil
+	// var respond RespondBody
+	// if err := json.Unmarshal(message, &respond); err != nil {
+	// 	return "", fmt.Errorf("error unmarshalling response: %v", err)
+	// }
+	if resp.StatusCode == http.StatusBadRequest {
+		return "", fmt.Errorf("%s", string(message))
+	}
+	if resp.StatusCode == http.StatusOK {
+		_, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return "", err
 		}
-		return "", fmt.Errorf(string(message))
+		return string(message), nil
+	}
+	return "", fmt.Errorf(string(message))
 }
 
 func SetHeaders(req *http.Request, token string) {
@@ -196,7 +196,7 @@ func SetHeadersWithPrice(req *http.Request, token string) {
 
 // Using the cookie jar to get the user info
 func GetUserInfo(token string) (string, error) {
-	url, _ := url.Parse("http://hcmutssps.id.vn/api/info")
+	url, _ := url.Parse(apiUrl + "/api/info")
 	req, _ := http.NewRequest("GET", url.String(), nil)
 	SetHeaders(req, token)
 	resp, err := http.DefaultClient.Do(req)
