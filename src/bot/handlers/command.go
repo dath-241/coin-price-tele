@@ -29,7 +29,14 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 	text := message.Text
 
 	log.Printf("\n\n%s wrote: %s", user.FirstName+" "+user.LastName, text)
-
+	// Get the mute status of the user
+	isMuted, err := services.GetMute(int(user.ID))
+	if err != nil {
+		log.Println("Error getting mute status:", err)
+	}
+	if isMuted && !strings.Contains(text, "/mute") {
+		return
+	}
 	if strings.HasPrefix(text, "/") {
 		parts := strings.Fields(text)
 		command := parts[0]
@@ -65,6 +72,7 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 // Handle commands
 func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.BotAPI, user *tgbotapi.User) {
 	fmt.Println("userID: ", user.ID)
+
 	switch command {
 	case "/help":
 		_, err := bot.Send(tgbotapi.NewMessage(chatID, strings.Join(commandList, "\n")))
@@ -162,7 +170,6 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		} else {
 			bot.Send(tgbotapi.NewMessage(chatID, response))
 		}
-		
 
 	case "/changepassword":
 		//syntax: /changepassword <old_password> <new_password> <confirm_newpassword>
@@ -174,7 +181,20 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		// old_password := args[0]
 		// new_password := args[1]
 		// confirm_newpassword := args[2]
-
+	case "/mute":
+		if len(args) != 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /mute <on/off>")
+			bot.Send(msg)
+			return
+		}
+		// Get the mute status of the user
+		isMuted := args[0] == "on"
+		err := services.SetMute(int(user.ID), isMuted)
+		if err != nil {
+			log.Println("Error setting mute status:", err)
+			return
+		}
+		bot.Send(tgbotapi.NewMessage(chatID, "Mute status set to "+args[0]))
 	case "/changeinfo":
 		bot.Send(tgbotapi.NewMessage(chatID, "In Progress"))
 	case "/getinfo":

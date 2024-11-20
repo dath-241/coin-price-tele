@@ -46,6 +46,7 @@ var commandList = []string{
 	"/kline <symbol> <interval> [limit] - Get Kline data for a symbol",
 	"/kline_realtime <symbol> <interval> Get realtime Kline data",
 	"/stop - stop receiving data from kline-realtime",
+	"/mute <on/off> - Mute bot",
 }
 
 type UserInfo struct {
