@@ -7,8 +7,25 @@ import (
 	"telegram-bot/bot"
 	"telegram-bot/config"
 
+	//"telegram-bot/services"
+
 	"github.com/joho/godotenv"
 )
+
+// func spot_GetSymbol() {
+// 	var err error
+// 	handlers.SpotSymbols, err = handlers.GetAvailableSymbols(handlers.SpotExchangeInfoURL)
+// 	if err != nil {
+// 		log.Fatalf("Error fetching symbols: %v", err)
+// 	}
+// }
+// func future_GetSymbol() {
+// 	var err error
+// 	handlers.FuturesSymbols, err = handlers.GetAvailableSymbols(handlers.FuturesExchangeInfoURL)
+// 	if err != nil {
+// 		log.Fatalf("Error fetching symbols: %v", err)
+// 	}
+// }
 
 func main() {
 	if os.Getenv("GO_ENV") != "production" {
@@ -31,7 +48,14 @@ func main() {
 	}
 	go http.HandleFunc("/backend", bot.PriceUpdateHandler)
 
+	// cần xem xét để chay riêng 2 hàm này để fetch symbol  ( quan trọng)
+	//services.FetchSpotSymbols()
+	//services.FetchFuturesSymbols()
+
+	//go services.CallSortSymbols()
+
 	go http.ListenAndServe(":"+port, nil)
 	log.Printf("Bot is listening on port %s...\n", port)
 	bot.StartWebhook(tgBot)
+
 }
