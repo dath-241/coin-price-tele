@@ -16,6 +16,7 @@ import (
 
 	// "sync"
 	// "bytes"
+	"io"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -105,10 +106,19 @@ type CoinPriceUpdate struct {
 	Condition   string  `json:"condition"`
 	ChatID      string  `json:"chatID"`
 	Timestamp   string  `json:"timestamp"`
-	Indicator 	string 	`json:"indicator"`
-	Value 		float64 `json:"value"`
-	Period 		string 	`json:"period"`
 	Triggertype string  `json:"triggerType"` //spot, price-difference, funding-rate, future
+}
+
+type IndicatorUpdate struct {
+	Symbol      string  `json:"symbol"`
+	Condition   string  `json:"condition"`
+	ChatID      string  `json:"chatID"`
+	Timestamp   string  `json:"timestamp"`
+	Indicator 	string 	`json:"indicator"`
+	IndicatorValue 	float64 	`json:"indicatorValue"`
+	Threshold   float64 `json:"threshold"`
+	Period 		int 	`json:"period"`
+	Triggertype string  `json:"triggerType"` //indicator
 }
 
 // Initialize the bot with the token
@@ -179,56 +189,112 @@ func receiveUpdates(ctx context.Context, updates tgbotapi.UpdatesChannel) {
 }
 
 func PriceUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	//? nhan lenh post -> gui cho user
-	//? print user
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
-	var update CoinPriceUpdate
-	err := json.NewDecoder(r.Body).Decode(&update)
+	// Read the request body
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Failed to decode JSON", http.StatusBadRequest)
+		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
 		return
 	}
 	defer r.Body.Close()
 
-	// Process the received data
-	fmt.Printf("Received price update: Coin: %s, Price: %.2f, Timestamp: %s\n", update.Symbol, update.Threshold, update.Timestamp)
-	// Sử dụng WaitGroup để quản lý các goroutine
-	direction := "below"
-
-	if update.Condition == ">=" || update.Condition == ">" {
-		direction = "above"
+	var temp struct {
+		TriggerType string `json:"triggerType"`
 	}
-	chatID, err := strconv.ParseInt(update.ChatID, 10, 64)
+
+	err = json.Unmarshal(body, &temp)
 	if err != nil {
-		http.Error(w, "Invalid chat ID", http.StatusBadRequest)
+		http.Error(w, "Failed to decode JSON", http.StatusBadRequest)
 		return
 	}
-	var mess string
-	if update.Triggertype == "spot" {
-		mess = fmt.Sprintf("🚨Price alert:\n👉Coin: %s is %s spot price threshold: %.2f\n👉Current spot price: %.2f",
-			update.Symbol, direction, update.Threshold, update.Spotprice)
 
-	} else if update.Triggertype == "future" {
-		mess = fmt.Sprintf("🚨Price alert:\n👉Coin: %s is %s future price threshold: %.2f\n👉Current future price: %.2f",
-			update.Symbol, direction, update.Threshold, update.Futureprice)
+	if temp.TriggerType == "indicator"{
+		var update IndicatorUpdate
+		err = json.Unmarshal(body, &update)
+		if err != nil {
+			http.Error(w, "Failed to decode JSON", http.StatusBadRequest)
+			return
+		}
+		fmt.Printf("Received price update: Coin: %s, Trigger Type: %s, Timestamp: %s\n", update.Symbol, update.Triggertype, update.Timestamp)
 
-	} else if update.Triggertype == "funding-rate" {
-		mess = fmt.Sprintf("🚨Funding rate alert:\n👉Coin: %s is %s funding rate threshold: %.2f\n👉Current funding rate: %.2f",
-			update.Symbol, direction, update.Threshold, update.Fundingrate)
+		direction := "below"
+		if update.Condition == ">=" || update.Condition == ">" {
+			direction = "above"
+		}
+		chatID, err := strconv.ParseInt(update.ChatID, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid chat ID", http.StatusBadRequest)
+			return
+		}
+		mess := fmt.Sprintf("🚨Price alert:\n👉Coin: %s is %s indicator: %s \n👉Current value: %.2f",
+							update.Symbol, direction, update.Indicator, update.IndicatorValue)
+		go handlers.SendMessageToUser(bot, chatID, mess)
 
-	} else if update.Triggertype == "price-difference" {
-		mess = fmt.Sprintf("🚨Price alert:\n👉Coin: %s is %s Price-diff threshold: %.2f\n👉Current spot price: %.2f, Current future price: %.2f",
-			update.Symbol, direction, update.Pricediff, update.Spotprice, update.Futureprice)
-	}else if update.Triggertype == "indicator"{
-		mess = fmt.Sprintf("🚨Price alert:\n👉Coin: %s is %s indicator: %s \n👉Current value: %.2f",
-			update.Symbol, direction, update.Indicator, update.Value)
+	}else {
+		var update CoinPriceUpdate
+		err = json.Unmarshal(body, &update)
+		if err != nil {
+			http.Error(w, "Failed to decode JSON", http.StatusBadRequest)
+			return
+		}
+		fmt.Printf("Received price update: Coin: %s, Price: %.2f, Timestamp: %s\n", update.Symbol, update.Threshold, update.Timestamp)
+
+		direction := "below"
+		if update.Condition == ">=" || update.Condition == ">" {
+			direction = "above"
+		}
+		chatID, err := strconv.ParseInt(update.ChatID, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid chat ID", http.StatusBadRequest)
+			return
+		}
+		var mess string
+		if update.Triggertype == "spot" {
+			mess = fmt.Sprintf("🚨Price alert:\n👉Coin: %s is %s spot price threshold: %.2f\n👉Current spot price: %.2f",
+				update.Symbol, direction, update.Threshold, update.Spotprice)
+
+		} else if update.Triggertype == "future" {
+			mess = fmt.Sprintf("🚨Price alert:\n👉Coin: %s is %s future price threshold: %.2f\n👉Current future price: %.2f",
+				update.Symbol, direction, update.Threshold, update.Futureprice)
+
+		} else if update.Triggertype == "funding-rate" {
+			mess = fmt.Sprintf("🚨Funding rate alert:\n👉Coin: %s is %s funding rate threshold: %.2f\n👉Current funding rate: %.2f",
+				update.Symbol, direction, update.Threshold, update.Fundingrate)
+
+		} else if update.Triggertype == "price-difference" {
+			mess = fmt.Sprintf("🚨Price alert:\n👉Coin: %s is %s Price-diff threshold: %.2f\n👉Current spot price: %.2f, Current future price: %.2f",
+				update.Symbol, direction, update.Pricediff, update.Spotprice, update.Futureprice)
+		}
+		go handlers.SendMessageToUser(bot, chatID, mess)
 	}
-	go handlers.SendMessageToUser(bot, chatID, mess)
 
-	// Respond to the sender
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Price update received"))
 }
+
+
+// {
+//     "symbol": "BTC",
+//     "condition": ">=",
+//     "chatID": "",
+//     "timestamp": "2023-10-01T12:00:00Z",
+//     "indicator": "EMA",
+// 		"indicatorValue" : "",
+//     "value": 70.5000,
+//     "period": "14",
+//     "triggerType": "indicator"
+// }
+
+// {
+//     "symbol": "BTC",
+//     "spot_price": 45000.00,
+//     "threshold": 44000.00,
+//     "condition": ">=",
+//     "chatID": "",
+//     "timestamp": "2023-10-01T12:00:00Z",
+//     "value": 45000.00,
+//     "triggerType": "spot"
+// }
