@@ -122,7 +122,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 	case "/register":
 		//syntax /signup <email> <name> <username> <password>
 		if len(args) < 4 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /signup <email> <name> <username> <password>")
+			msg := tgbotapi.NewMessage(chatID, "Usage: /register <email> <name> <username> <password>")
 			bot.Send(msg)
 			return
 		}

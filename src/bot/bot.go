@@ -32,11 +32,11 @@ var commands = []tgbotapi.BotCommand{
 		Description: "Log in to the bot",
 	},
 	{
-		Command: 	"register",
+		Command:     "register",
 		Description: "Register new user",
 	},
 	{
-		Command: 	"forgotpassword",
+		Command:     "forgotpassword",
 		Description: "Send OTP to email to get new password",
 	},
 	{
@@ -44,16 +44,8 @@ var commands = []tgbotapi.BotCommand{
 		Description: "Get user information",
 	},
 	{
-		Command:     "menu",
-		Description: "Show menu with buttons",
-	},
-	{
 		Command:     "help",
 		Description: "Show available commands",
-	},
-	{
-		Command:     "protected",
-		Description: "Test to see if user is authenticated",
 	},
 	{
 		Command:     "kline",
@@ -105,9 +97,9 @@ type CoinPriceUpdate struct {
 	Condition   string  `json:"condition"`
 	ChatID      string  `json:"chatID"`
 	Timestamp   string  `json:"timestamp"`
-	Indicator 	string 	`json:"indicator"`
-	Value 		float64 `json:"value"`
-	Period 		string 	`json:"period"`
+	Indicator   string  `json:"indicator"`
+	Value       float64 `json:"value"`
+	Period      string  `json:"period"`
 	Triggertype string  `json:"triggerType"` //spot, price-difference, funding-rate, future
 }
 
@@ -222,7 +214,7 @@ func PriceUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	} else if update.Triggertype == "price-difference" {
 		mess = fmt.Sprintf("🚨Price alert:\n👉Coin: %s is %s Price-diff threshold: %.2f\n👉Current spot price: %.2f, Current future price: %.2f",
 			update.Symbol, direction, update.Pricediff, update.Spotprice, update.Futureprice)
-	}else if update.Triggertype == "indicator"{
+	} else if update.Triggertype == "indicator" {
 		mess = fmt.Sprintf("🚨Price alert:\n👉Coin: %s is %s indicator: %s \n👉Current value: %.2f",
 			update.Symbol, direction, update.Indicator, update.Value)
 	}
