@@ -170,3 +170,22 @@
      - `setting`: loại cài đặt.
      - `value`: giá trị cài đặt.
    - **Output**: Xác nhận cài đặt chat.
+
+### 27. **/forgotpassword &lt;username&gt;**
+   - **Công dụng**: quên mật khẩu
+   - **Input**:
+     - `username`: tên người dùng.
+   - **Output**: Gửi OTP qua mail.
+
+### 28. **/changepassword &lt;old_password&gt; &lt;new_password&gt; &lt;confirm_newpassword&gt;**
+   - **Công dụng**: đổi mật khẩu
+   - **Input**:
+     - `old_password`: mật khẩu cũ.
+     - `new_password`: mật khẩu mới.
+     - `confirm_newpassword`: xác nhận mật khẩu mới.
+   - **Output**: Xác nhận thành công, yêu cầu đăng nhập lại.
+
+### 29. **/changeinfo** 
+   - **Công dụng**: đổi thông tin
+   - **Input**:
+   - **Output**: đổi thông tin.
