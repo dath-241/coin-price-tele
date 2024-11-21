@@ -130,25 +130,38 @@
 - **Input**: /signup <email> <name> <username> <password>
 - **Output**: Thông báo đăng ký thành công.
 
-### 20. **/forgotpassword** ✅
+### 20. **/forgotpassword &lt;username&gt;**
+   - **Công dụng**: quên mật khẩu
+   - **Input**:
+     - `username`: tên người dùng.
+   - **Output**: Gửi OTP qua mail.
 
-- **Công dụng**: Quên mật khẩu.
-- **Input**: /forgotpassword <username>
-- **Output**: Thông báo quên mật khẩu.
+### 21. **/changepassword &lt;old_password&gt; &lt;new_password&gt; &lt;confirm_newpassword&gt;**
+   - **Công dụng**: đổi mật khẩu
+   - **Input**:
+     - `old_password`: mật khẩu cũ.
+     - `new_password`: mật khẩu mới.
+     - `confirm_newpassword`: xác nhận mật khẩu mới.
+   - **Output**: Xác nhận thành công, yêu cầu đăng nhập lại.
 
-### 21. **/marketcap &lt;symbol&gt;**
+### 22. **/changeinfo** 
+   - **Công dụng**: đổi thông tin
+   - **Input**:
+   - **Output**: đổi thông tin.
+
+### 23. **/marketcap &lt;symbol&gt;**
 
 - **Công dụng**: Lấy thông tin về vốn hóa thị trường của coin.
 - **Input**: `symbol` - mã coin.
 - **Output**: Thông tin về vốn hóa và thứ hạng của coin.
 
-### 22. **/volume &lt;symbol&gt;**
+### 24. **/volume &lt;symbol&gt;**
 
 - **Công dụng**: Lấy thông tin về khối lượng giao dịch.
 - **Input**: `symbol` - mã coin.
 - **Output**: Thông tin về khối lượng giao dịch 24h.
 
-### 23. **/indicator &lt;symbol&gt; &lt;indicator_type&gt; &lt;params...&gt;**
+### 25. **/indicator &lt;symbol&gt; &lt;indicator_type&gt; &lt;params...&gt;**
 
 - **Công dụng**: Tính toán giá trị các chỉ báo kỹ thuật.
 - **Input**:
@@ -157,13 +170,13 @@
   - `params`: các tham số cho chỉ báo.
 - **Output**: Giá trị chỉ báo được tính toán.
 
-### 24. **/load_indicator &lt;file_path&gt;**
+### 26. **/load_indicator &lt;file_path&gt;**
 
 - **Công dụng**: Tải plugin chỉ báo tùy chỉnh.
 - **Input**: `file_path` - đường dẫn đến file plugin.
 - **Output**: Thông báo tải plugin thành công hoặc thất bại.
 
-### 25. **/alert_indicator &lt;symbol&gt; &lt;indicator&gt; &lt;condition&gt; &lt;value&gt;**
+### 27. **/alert_indicator &lt;symbol&gt; &lt;indicator&gt; &lt;condition&gt; &lt;value&gt;**
 
 - **Công dụng**: Cài đặt cảnh báo dựa trên chỉ báo kỹ thuật.
 - **Input**:
@@ -173,7 +186,7 @@
   - `value`: giá trị ngưỡng.
 - **Output**: Thông báo cảnh báo đã được cài đặt.
 
-### 26. **/snooze &lt;trigger_id&gt; &lt;duration&gt;**
+### 28. **/snooze &lt;trigger_id&gt; &lt;duration&gt;**
 
 - **Công dụng**: Tạm dừng cảnh báo trong một khoảng thời gian.
 - **Input**:
@@ -181,7 +194,7 @@
   - `duration`: thời gian tạm dừng (phút).
 - **Output**: Xác nhận tạm dừng cảnh báo.
 
-### 27. **/repeat &lt;trigger_id&gt; &lt;type&gt; &lt;value&gt;**
+### 29. **/repeat &lt;trigger_id&gt; &lt;type&gt; &lt;value&gt;**
 
 - **Công dụng**: Cài đặt lặp lại cho cảnh báo.
 - **Input**:
@@ -190,13 +203,13 @@
   - `value`: số lần/lịch lặp lại.
 - **Output**: Xác nhận cài đặt lặp lại.
 
-### 28. **/mute [on/off]**
+### 30. **/mute [on/off]**
 
 - **Công dụng**: Bật/tắt chế độ im lặng của bot.
 - **Input**: `on/off` (tùy chọn).
 - **Output**: Thông báo trạng thái im lặng của bot.
 
-### 29. **/chat_config &lt;setting&gt; &lt;value&gt;**
+### 31. **/chat_config &lt;setting&gt; &lt;value&gt;**
 
 - **Công dụng**: Cấu hình chat cho nhóm/topic.
 - **Input**:
@@ -204,21 +217,4 @@
   - `value`: giá trị cài đặt.
 - **Output**: Xác nhận cài đặt chat.
 
-### 30. **/forgotpassword &lt;username&gt;**
-   - **Công dụng**: quên mật khẩu
-   - **Input**:
-     - `username`: tên người dùng.
-   - **Output**: Gửi OTP qua mail.
 
-### 31. **/changepassword &lt;old_password&gt; &lt;new_password&gt; &lt;confirm_newpassword&gt;**
-   - **Công dụng**: đổi mật khẩu
-   - **Input**:
-     - `old_password`: mật khẩu cũ.
-     - `new_password`: mật khẩu mới.
-     - `confirm_newpassword`: xác nhận mật khẩu mới.
-   - **Output**: Xác nhận thành công, yêu cầu đăng nhập lại.
-
-### 32. **/changeinfo** 
-   - **Công dụng**: đổi thông tin
-   - **Input**:
-   - **Output**: đổi thông tin.
