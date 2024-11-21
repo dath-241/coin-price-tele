@@ -46,4 +46,12 @@ var commandList = []string{
 	"/kline <symbol> <interval> [limit] [startTime] [endTime] - Get Kline data for a symbol",
 	"/kline_realtime <symbol> <interval> Get realtime Kline data",
 	"/stop - stop receiving data from kline-realtime",
+	"/register - register an account",
+	"/forgotpassword - get an OTP to email",
+	// ... existing commands ...
+	"/alert_price_with_threshold <spot/future> <lower/above> <symbol> <threshold> - Set price alert with threshold",
+	"/price_difference <lower/above> <symbol> <threshold> - Set price difference alert",
+	"/funding_rate_change <lower/above> <symbol> <threshold> - Set funding rate change alert",
+	"/all_triggers - Get all triggers",
+	"/delete_trigger <spot/future/price-difference/funding-rate> <symbol> - Delete a specific trigger",
 }

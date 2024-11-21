@@ -143,6 +143,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		// old_password := args[0]
 		// new_password := args[1]
 		// confirm_newpassword := args[2]
+		bot.Send(tgbotapi.NewMessage(chatID, "In Progress"))
 
 	case "/changeinfo":
 		bot.Send(tgbotapi.NewMessage(chatID, "In Progress"))
