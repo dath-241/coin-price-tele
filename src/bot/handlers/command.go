@@ -318,7 +318,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 	// 	go GetFundingRateCountdown(chatID, symbol, bot)
 	case "/kline_realtime":
 		if len(args) != 2 {
-			bot.Send(tgbotapi.NewMessage(chatID, "Usage: /kline <symbol> <interval>. Example: /kline BTCUSDT 1m"))
+			bot.Send(tgbotapi.NewMessage(chatID, "Usage: /kline_realtime <symbol> <interval>. Example: /kline BTCUSDT 1m"))
 			return
 		}
 
