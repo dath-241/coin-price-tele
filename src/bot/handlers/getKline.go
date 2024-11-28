@@ -52,6 +52,18 @@ type UserConnection struct {
 var userConnections = make(map[int64]*UserConnection)
 var mapMutex = sync.Mutex{}
 
+// Function to format JSON as Telegram code block
+func formatJSONResponse(data interface{}) string {
+	jsonData, err := json.MarshalIndent(data, "", "    ")
+	if err != nil {
+		log.Printf("Error formatting JSON: %v", err)
+		return "Error formatting data"
+	}
+
+	// Wrap JSON in Telegram MarkdownV2 code block
+	return fmt.Sprintf("```json\n%s\n```", jsonData)
+}
+
 // fetchKlineData sends a GET request to the backend API with cookie for security
 func fetchKlineData(symbol, interval, cookie string, chatID int64, bot *tgbotapi.BotAPI) {
 	reqUrl := fmt.Sprintf("%s?symbols=%s&interval=%s", baseUrl, symbol, interval)
@@ -100,11 +112,22 @@ func fetchKlineData(symbol, interval, cookie string, chatID int64, bot *tgbotapi
 		}
 
 		// Gửi dữ liệu đã giải mã đến người dùng Telegram
-		klineMessage := fmt.Sprintf("Real-time Kline data:\nOpen: %s\nHigh: %s\nLow: %s\nClose: %s",
-			klineData.OpenPrice, klineData.HighPrice, klineData.LowPrice, klineData.ClosePrice)
-		bot.Send(tgbotapi.NewMessage(chatID, klineMessage))
+		selectedData := map[string]interface{}{
+			"symbol":     klineData.Symbol,
+			"openPrice":  formatNumber(klineData.OpenPrice, false),
+			"closePrice": formatNumber(klineData.ClosePrice, false),
+			"highPrice":  formatNumber(klineData.HighPrice, false),
+			"lowPrice":   formatNumber(klineData.LowPrice, false),
+			"volume":     formatNumber(klineData.Volume, false),
+			"eventTime":  klineData.EventTime,
+			"tradeCount": klineData.NumberOfTrades,
+		}
 
-		time.Sleep(time.Second) // Tránh spam tin nhắn
+		jsonMessage := formatJSONResponse(selectedData)
+		msg := tgbotapi.NewMessage(chatID, jsonMessage)
+		msg.ParseMode = "MarkdownV2"
+		bot.Send(msg)
+		time.Sleep(time.Second)
 	}
 }
 
