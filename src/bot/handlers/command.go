@@ -118,29 +118,6 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		} else {
 			_, _ = bot.Send(tgbotapi.NewMessage(chatID, response))
 		}
-	case "/kline":
-		if len(args) < 2 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /kline <symbol> <interval> [limit] [startTime] [endTime]")
-			bot.Send(msg)
-
-			return
-		}
-		symbol := args[0]
-		interval := args[1]
-		limit := 5
-		if len(args) == 3 {
-			parsedLimit, err := strconv.Atoi(args[2])
-			if err == nil {
-				limit = parsedLimit
-			}
-		}
-		data, err := getKlineData(symbol, interval, limit) // Pass parameters as needed
-		if err != nil {
-			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error fetching Kline data: "+err.Error()))
-		} else {
-			log.Println(data)
-			sendChartToTelegram(bot, chatID, klineBase(data))
-		}
 	case "/menu":
 		_, err := bot.Send(sendMenu(chatID))
 		if err != nil {
@@ -218,6 +195,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		}
 		symbol := args[0]
 		go GetFundingRateStream(chatID, symbol, bot, token)
+
 	// case "/funding_rate_countdown":
 	// 	if len(args) < 1 {
 	// 		msg := tgbotapi.NewMessage(chatID, "Usage: /funding_rate_countdown <symbol>")
@@ -226,37 +204,38 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 	// 	}
 	// 	symbol := args[0]
 	// 	go GetFundingRateCountdown(chatID, symbol, bot)
-	case "/kline_realtime":
-		if len(args) != 2 {
-			bot.Send(tgbotapi.NewMessage(chatID, "Usage: /kline <symbol> <interval>. Example: /kline BTCUSDT 1m"))
-			return
-		}
 
-		symbol := args[0]
-		interval := args[1]
+	// case "/kline_realtime":
+	// 	if len(args) != 2 {
+	// 		bot.Send(tgbotapi.NewMessage(chatID, "Usage: /kline <symbol> <interval>. Example: /kline BTCUSDT 1m"))
+	// 		return
+	// 	}
 
-		mapMutex.Lock()
-		userConnections[chatID] = &UserConnection{isStreaming: true}
-		mapMutex.Unlock()
+	// 	symbol := args[0]
+	// 	interval := args[1]
 
-		token, err := services.GetUserToken(int(user.ID))
-		if err != nil {
-			log.Println("Error retrieving token:", err)
-			return
-		}
+	// 	mapMutex.Lock()
+	// 	userConnections[chatID] = &UserConnection{isStreaming: true}
+	// 	mapMutex.Unlock()
 
-		// Start fetching Kline data and sending real-time updates to the user
-		go fetchKlineData(symbol, interval, token, chatID, bot)
-		bot.Send(tgbotapi.NewMessage(chatID, "Fetching real-time Kline data..."))
-	case "/stop":
-		mapMutex.Lock()
-		if userConn, ok := userConnections[chatID]; ok {
-			userConn.isStreaming = false
-			bot.Send(tgbotapi.NewMessage(chatID, "Stopped real-time Kline updates."))
-		} else {
-			bot.Send(tgbotapi.NewMessage(chatID, "No active real-time updates to stop."))
-		}
-		mapMutex.Unlock()
+	// 	token, err := services.GetUserToken(int(user.ID))
+	// 	if err != nil {
+	// 		log.Println("Error retrieving token:", err)
+	// 		return
+	// 	}
+
+	// 	// Start fetching Kline data and sending real-time updates to the user
+	// 	go fetchKlineDataRealtime(symbol, interval, token, chatID, bot)
+	// 	bot.Send(tgbotapi.NewMessage(chatID, "Fetching real-time Kline data..."))
+	// case "/stop":
+	// 	mapMutex.Lock()
+	// 	if userConn, ok := userConnections[chatID]; ok {
+	// 		userConn.isStreaming = false
+	// 		bot.Send(tgbotapi.NewMessage(chatID, "Stopped real-time Kline updates."))
+	// 	} else {
+	// 		bot.Send(tgbotapi.NewMessage(chatID, "No active real-time updates to stop."))
+	// 	}
+	// 	mapMutex.Unlock()
 
 	//----------------------------------------------------------------------------------------
 	case "/all_triggers":
@@ -343,6 +322,30 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			return
 		}
 		go RegisterPriceDifferenceAndFundingRate(chatID, symbol, threshold, is_lower, "funding-rate", bot)
+	}
+}
+
+func HandleKlineCommand(chatID int64, command string, bot *tgbotapi.BotAPI, user *tgbotapi.User) {
+	switch command {
+	case "/kline":
+		updateSymbolUsage("BTCUSDT")
+		updateSymbolUsage("ETHUSDT")
+		updateSymbolUsage("BNBUSDT")
+
+		msg := tgbotapi.NewMessage(chatID, "Choose fetch type:")
+		fetchTypes := []string{"ondemand", "realtime"}
+		var rows []tgbotapi.KeyboardButton
+		for _, t := range fetchTypes {
+			rows = append(rows, tgbotapi.NewKeyboardButton(t))
+		}
+		msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(rows)
+		bot.Send(msg)
+		mapMutex.Lock()
+		UserSelections[chatID] = map[string]string{"step": "fetch_type_selection"}
+		stopChanMap[chatID] = make(chan bool)
+		mapMutex.Unlock()
+	default:
+		handleUserSteps(command, bot, chatID, user)
 	}
 }
 
