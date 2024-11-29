@@ -40,12 +40,9 @@ var commandList = []string{
 	"/getinfo - Get user info",
 	"/menu - Show menu with buttons",
 	"/help - Show available commands",
-	"/kline - Fetches Kline data for a specific trading pair and interval",
+	"/kline - Fetches Kline data for a specific trading pair and interval with two choice 'ondemand' or 'realtime'",
 	"/p <symbol> - Fetches the price and funding rate of a specific trading pair",
 	"<symbol> - Fetches the price a specific trading pair",
-	"/kline <symbol> <interval> [limit] - Get Kline data for a symbol",
-	"/kline_realtime <symbol> <interval> Get realtime Kline data",
-	"/stop - stop receiving data from kline-realtime",
 	"/mute <on/off> - Mute bot",
 }
 

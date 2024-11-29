@@ -50,15 +50,7 @@ var commands = []tgbotapi.BotCommand{
 	},
 	{
 		Command:     "kline",
-		Description: "Get Kline data on demand for a symbol",
-	},
-	{
-		Command:     "kline_realtime",
-		Description: "Get realtime Kline data for a symbol",
-	},
-	{
-		Command:     "stop",
-		Description: "Stop receiving Kline_realtime",
+		Description: "Get Kline data and candlestick chart for a symbol ondemand or realtime",
 	},
 	{
 		Command:     "p",
