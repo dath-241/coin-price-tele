@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
@@ -13,7 +14,7 @@ type klineData struct {
 }
 
 // Create the Kline chart in memory
-func klineBase(kd []klineData) *charts.Kline {
+func klineBase(kd []klineData, symbol string, interval string) *charts.Kline {
 	kline := charts.NewKLine()
 
 	x := make([]string, 0)
@@ -25,7 +26,7 @@ func klineBase(kd []klineData) *charts.Kline {
 
 	kline.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{
-			Title: "Kline On Demand",
+			Title: fmt.Sprintf("Kline Chart - %s : (%s)", symbol, interval),
 		}),
 		charts.WithXAxisOpts(opts.XAxis{
 			SplitNumber: 20,
