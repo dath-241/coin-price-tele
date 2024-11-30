@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"bufio"
-	"io/ioutil"
+	"io"
 	"sort"
 
 	//"context"
@@ -353,7 +353,7 @@ func getKlineData(symbol string, interval string, options ...int) ([]klineData, 
 	}
 
 	var data [][]interface{}
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	json.Unmarshal(body, &data)
 
 	var kd []klineData
@@ -395,17 +395,14 @@ func sendChartToTelegram(bot *tgbotapi.BotAPI, chatID int64, chart *charts.Kline
 	}
 	log.Printf("Chart snapshot generated: %s", fileName)
 
-	imgBytes, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		log.Printf("failed to read generated chart image: %v", err)
-		return fmt.Errorf("failed to read generated chart image: %w", err)
-	}
-	log.Printf("Image read successfully, size: %d bytes", len(imgBytes))
+	// imgBytes, err := ioutil.ReadFile(fileName)
+	// if err != nil {
+	// 	log.Printf("failed to read generated chart image: %v", err)
+	// 	return fmt.Errorf("failed to read generated chart image: %w", err)
+	// }
+	// log.Printf("Image read successfully, size: %d bytes", len(imgBytes))
 
-	msg := tgbotapi.NewPhoto(chatID, tgbotapi.FileBytes{
-		Name:  fileName,
-		Bytes: imgBytes,
-	})
+	msg := tgbotapi.NewPhoto(chatID, tgbotapi.FilePath(fileName))
 
 	if _, err := bot.Send(msg); err != nil {
 		log.Printf("failed to send chart image: %v", err)
