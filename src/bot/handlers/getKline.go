@@ -353,7 +353,7 @@ func handleFetchingActions(update string, bot *tgbotapi.BotAPI, chatID int64) {
 }
 
 func getKlineData(symbol string, interval string, options ...int) ([]klineData, error) {
-	apiURL := fmt.Sprintf("https://api.binance.com/api/v3/klines?symbol=%s&interval=%s", symbol, interval)
+	apiURL := fmt.Sprintf("https://api.binance.us/api/v3/klines?symbol=%s&interval=%s", symbol, interval)
 
 	if len(options) > 0 {
 		apiURL = fmt.Sprintf("%s&limit=%d", apiURL, options[0])
