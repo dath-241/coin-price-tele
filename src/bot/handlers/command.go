@@ -2,7 +2,6 @@ package handlers
 
 import (
 	// "context"
-
 	"fmt"
 	"log"
 	"strconv"
@@ -29,14 +28,7 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 	text := message.Text
 
 	log.Printf("\n\n%s wrote: %s", user.FirstName+" "+user.LastName, text)
-	// Get the mute status of the user
-	isMuted, err := services.GetMute(int(user.ID))
-	if err != nil {
-		log.Println("Error getting mute status:", err)
-	}
-	if isMuted && !strings.Contains(text, "/mute") {
-		return
-	}
+
 	if strings.HasPrefix(text, "/") {
 		parts := strings.Fields(text)
 		command := parts[0]
@@ -72,7 +64,6 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 // Handle commands
 func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.BotAPI, user *tgbotapi.User) {
 	fmt.Println("userID: ", user.ID)
-
 	switch command {
 	case "/help":
 		_, err := bot.Send(tgbotapi.NewMessage(chatID, strings.Join(commandList, "\n")))
@@ -102,16 +93,12 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 
 		username := args[0]
 		password := args[1]
-		_, token, err := services.LogIn(username, password)
+		response, token, err := services.LogIn(username, password)
 
 		if err != nil {
-			bot.Send(tgbotapi.NewMessage(chatID, "Error logging in: "+err.Error()))
+			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error logging in: "+err.Error()))
 		} else {
-			successMessage := "🎉 Đăng nhập thành công. 🎉"
-			_, err = bot.Send(tgbotapi.NewMessage(chatID, successMessage))
-			if err != nil {
-				log.Println("Error sending message:", err)
-			}
+			_, _ = bot.Send(tgbotapi.NewMessage(chatID, response))
 			err = services.StoreUserToken(int(user.ID), token)
 			// Log the token
 			log.Println("Token:", token)
@@ -119,84 +106,6 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 				log.Println("Error storing token:", err)
 			}
 		}
-	case "/register":
-		//syntax /signup <email> <name> <username> <password>
-		if len(args) < 4 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /register <email> <name> <username> <password>")
-			bot.Send(msg)
-			return
-		}
-		email := args[0]
-		name := args[1]
-		username := args[2]
-		password := args[3]
-		response, err := services.Regsiter(email, name, username, password)
-		if err != nil {
-			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
-		} else {
-			bot.Send(tgbotapi.NewMessage(chatID, response))
-			bot.Send(tgbotapi.NewMessage(chatID, "use /login to log in"))
-		}
-
-	case "/forgotpassword":
-		//syntax /forgotpassword <username>
-		//!cho OTP r lm j nua ?
-		if len(args) < 1 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /forgotpassword <username>")
-			bot.Send(msg)
-			return
-		}
-		username := args[0]
-		response, err := services.ForgotPassword(username)
-		if err != nil {
-			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
-		} else {
-			bot.Send(tgbotapi.NewMessage(chatID, response))
-		}
-	case "/testingadmin":
-		if len(args) < 1 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /forgotpassword <username>")
-			bot.Send(msg)
-			return
-		}
-		username := args[0]
-		token, err := services.GetUserToken(int(chatID))
-		if err != nil {
-			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
-		}
-		response, err := services.Testadmin(username, token)
-		if err != nil {
-			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
-		} else {
-			bot.Send(tgbotapi.NewMessage(chatID, response))
-		}
-
-	case "/changepassword":
-		//syntax: /changepassword <old_password> <new_password> <confirm_newpassword>
-		// if len(args) < 3 {
-		// 	msg := tgbotapi.NewMessage(chatID, "Usage: /changepassword <old_password> <new_password> <confirm_newpassword>")
-		// 	bot.Send(msg)
-		// 	return
-		// }
-		// old_password := args[0]
-		// new_password := args[1]
-		// confirm_newpassword := args[2]
-	case "/mute":
-		if len(args) != 1 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /mute <on/off>")
-			bot.Send(msg)
-			return
-		}
-		// Get the mute status of the user
-		isMuted := args[0] == "on"
-		err := services.SetMute(int(user.ID), isMuted)
-		if err != nil {
-			log.Println("Error setting mute status:", err)
-			return
-		}
-		bot.Send(tgbotapi.NewMessage(chatID, "Mute status set to "+args[0]))
-	case "/changeinfo":
-		bot.Send(tgbotapi.NewMessage(chatID, "In Progress"))
 	case "/getinfo":
 		token, err := services.GetUserToken(int(user.ID))
 		if err != nil {
@@ -207,29 +116,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		if err != nil {
 			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error getting user info: "+err.Error()))
 		} else {
-			handleUserInfo(chatID, bot, response)
-		}
-	case "/kline":
-		if len(args) < 2 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /kline <symbol> <interval> [limit]")
-			bot.Send(msg)
-			return
-		}
-		symbol := args[0]
-		interval := args[1]
-		limit := 5
-		if len(args) == 3 {
-			parsedLimit, err := strconv.Atoi(args[2])
-			if err == nil {
-				limit = parsedLimit
-			}
-		}
-		data, err := getKlineData(symbol, interval, limit) // Pass parameters as needed
-		if err != nil {
-			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error fetching Kline data: "+err.Error()))
-		} else {
-			log.Println(data)
-			sendChartToTelegram(bot, chatID, klineBase(data))
+			_, _ = bot.Send(tgbotapi.NewMessage(chatID, response))
 		}
 	case "/menu":
 		_, err := bot.Send(sendMenu(chatID))
@@ -308,6 +195,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		}
 		symbol := args[0]
 		go GetFundingRateStream(chatID, symbol, bot, token)
+
 	// case "/funding_rate_countdown":
 	// 	if len(args) < 1 {
 	// 		msg := tgbotapi.NewMessage(chatID, "Usage: /funding_rate_countdown <symbol>")
@@ -316,37 +204,6 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 	// 	}
 	// 	symbol := args[0]
 	// 	go GetFundingRateCountdown(chatID, symbol, bot)
-	case "/kline_realtime":
-		if len(args) != 2 {
-			bot.Send(tgbotapi.NewMessage(chatID, "Usage: /kline <symbol> <interval>. Example: /kline BTCUSDT 1m"))
-			return
-		}
-
-		symbol := args[0]
-		interval := args[1]
-
-		mapMutex.Lock()
-		userConnections[chatID] = &UserConnection{isStreaming: true}
-		mapMutex.Unlock()
-
-		token, err := services.GetUserToken(int(user.ID))
-		if err != nil {
-			log.Println("Error retrieving token:", err)
-			return
-		}
-
-		// Start fetching Kline data and sending real-time updates to the user
-		go fetchKlineData(symbol, interval, token, chatID, bot)
-		bot.Send(tgbotapi.NewMessage(chatID, "Fetching real-time Kline data..."))
-	case "/stop":
-		mapMutex.Lock()
-		if userConn, ok := userConnections[chatID]; ok {
-			userConn.isStreaming = false
-			bot.Send(tgbotapi.NewMessage(chatID, "Stopped real-time Kline updates."))
-		} else {
-			bot.Send(tgbotapi.NewMessage(chatID, "No active real-time updates to stop."))
-		}
-		mapMutex.Unlock()
 
 	//----------------------------------------------------------------------------------------
 	case "/all_triggers":
@@ -433,6 +290,30 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			return
 		}
 		go RegisterPriceDifferenceAndFundingRate(chatID, symbol, threshold, is_lower, "funding-rate", bot)
+	}
+}
+
+func HandleKlineCommand(chatID int64, command string, bot *tgbotapi.BotAPI, user *tgbotapi.User) {
+	switch command {
+	case "/kline":
+		updateSymbolUsage("BTCUSDT")
+		updateSymbolUsage("ETHUSDT")
+		updateSymbolUsage("BNBUSDT")
+
+		msg := tgbotapi.NewMessage(chatID, "Choose fetch type:")
+		fetchTypes := []string{"ondemand", "realtime"}
+		var rows []tgbotapi.KeyboardButton
+		for _, t := range fetchTypes {
+			rows = append(rows, tgbotapi.NewKeyboardButton(t))
+		}
+		msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(rows)
+		bot.Send(msg)
+		mapMutex.Lock()
+		UserSelections[chatID] = map[string]string{"step": "fetch_type_selection"}
+		stopChanMap[chatID] = make(chan bool)
+		mapMutex.Unlock()
+	default:
+		handleUserSteps(command, bot, chatID, user)
 	}
 }
 

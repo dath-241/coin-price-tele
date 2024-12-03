@@ -50,15 +50,7 @@ var commands = []tgbotapi.BotCommand{
 	},
 	{
 		Command:     "kline",
-		Description: "Get Kline data on demand for a symbol",
-	},
-	{
-		Command:     "kline_realtime",
-		Description: "Get realtime Kline data for a symbol",
-	},
-	{
-		Command:     "stop",
-		Description: "Stop receiving Kline_realtime",
+		Description: "Get Kline data and candlestick chart for a symbol ondemand or realtime",
 	},
 	{
 		Command:     "p",
@@ -157,7 +149,17 @@ func StartWebhook(bot *tgbotapi.BotAPI) {
 	updates := bot.ListenForWebhook("/webhook")
 	for update := range updates {
 		if update.Message != nil {
-			handlers.HandleMessage(update.Message, bot)
+			if update.Message.Text == "/kline" || update.Message.Text == "ondemand" || update.Message.Text == "realtime" ||
+				update.Message.Text == "/Resume" || update.Message.Text == "Stop" || update.Message.Text == "Chart" ||
+				handlers.UserSelections[update.Message.Chat.ID]["step"] == "coin_selection" ||
+				handlers.UserSelections[update.Message.Chat.ID]["step"] == "interval_selection" ||
+				handlers.UserSelections[update.Message.Chat.ID]["step"] == "other_input" ||
+				handlers.UserSelections[update.Message.Chat.ID]["step"] == "fetching_data" {
+				handlers.HandleKlineCommand(update.Message.Chat.ID, update.Message.Text, bot, update.Message.From)
+				log.Printf("Kline: %s", update.Message.Text)
+			} else {
+				handlers.HandleMessage(update.Message, bot)
+			}
 		} else if update.CallbackQuery != nil {
 			handlers.HandleButton(update.CallbackQuery, bot)
 		}
@@ -172,7 +174,15 @@ func receiveUpdates(ctx context.Context, updates tgbotapi.UpdatesChannel) {
 			return
 		case update := <-updates:
 			if update.Message != nil {
-				handlers.HandleMessage(update.Message, bot)
+				if update.Message.Text == "/kline" || update.Message.Text == "ondemand" || update.Message.Text == "realtime" ||
+					handlers.UserSelections[update.Message.Chat.ID]["step"] == "coin_selection" ||
+					handlers.UserSelections[update.Message.Chat.ID]["step"] == "interval_selection" ||
+					handlers.UserSelections[update.Message.Chat.ID]["step"] == "other_input" ||
+					handlers.UserSelections[update.Message.Chat.ID]["step"] == "fetching_data" {
+					handlers.HandleKlineCommand(update.Message.Chat.ID, update.Message.Text, bot, update.Message.From)
+				} else {
+					handlers.HandleMessage(update.Message, bot)
+				}
 			} else if update.CallbackQuery != nil {
 				handlers.HandleButton(update.CallbackQuery, bot)
 			}
