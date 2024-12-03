@@ -13,7 +13,8 @@ RUN apk add --no-cache \
 # Set environment variables for Chrome
 ENV CHROME_BIN=/usr/bin/chromium-browser \
     CHROME_PATH=/usr/lib/chromium/ \
-    DISPLAY=:99
+    DISPLAY=:99 \
+    CHROME_FLAGS="--no-sandbox"
 
 # Grant permissions if Chromedp has issues running headlessly
 RUN chmod -R 777 /usr/bin/chromium-browser
@@ -46,6 +47,9 @@ FROM chromedp/headless-shell:latest
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     dumb-init
+
+# Set the environment variable for the Chrome flags
+ENV CHROME_FLAGS="--no-sandbox"
 
 # Set entrypoint to use dumb-init for signal handling
 ENTRYPOINT ["dumb-init", "--"]
