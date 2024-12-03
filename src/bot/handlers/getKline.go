@@ -42,7 +42,7 @@ type KlineData struct {
 	Volume             string `json:"volume"`
 }
 
-const baseUrl = "https://dath.hcmutssps.id.vn/api/vip1/get-kline"
+const baseUrl = "https://a2-price.thuanle.me//api/vip1/get-kline"
 
 // UserConnection stores request state for each user
 type UserConnection struct {
@@ -331,7 +331,24 @@ func handleFetchingActions(update string, bot *tgbotapi.BotAPI, chatID int64) {
 			sendChartToTelegram(bot, chatID, klineBase(data, symbol, interval))
 		}
 	default:
-		bot.Send(tgbotapi.NewMessage(chatID, "Invalid action. Please choose Resume, Stop, or Chart."))
+		if stopChan != nil {
+			close(stopChan)
+			delete(stopChanMap, chatID)
+			// bot.Send(tgbotapi.NewMessage(chatID, "Fetching data stopped."))
+		}
+		UserSelections[chatID]["step"] = ""
+		fakeMessage := &tgbotapi.Message{
+			Chat: &tgbotapi.Chat{
+				ID: chatID,
+			},
+			From: &tgbotapi.User{
+				FirstName: "System",
+				LastName:  "Bot",
+			},
+			Text: update,
+		}
+
+		HandleMessage(fakeMessage, bot)
 	}
 }
 
