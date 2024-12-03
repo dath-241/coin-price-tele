@@ -21,7 +21,7 @@ import (
 
 	// "github.com/chromedp/chromedp"
 	"github.com/go-echarts/go-echarts/v2/charts"
-	"github.com/go-echarts/snapshot-chromedp/render"
+	// "github.com/go-echarts/snapshot-chromedp/render"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -405,7 +405,8 @@ func sendChartToTelegram(bot *tgbotapi.BotAPI, chatID int64, chart *charts.Kline
 	log.Printf("File name generated: %s", fileName)
 
 	// Render chart with Chromedp context
-	err = render.MakeChartSnapshot(chart.RenderContent(), fileName)
+	chart.RenderSnippet()
+	err = MakeChartSnapshot(chart.RenderContent(), fileName)
 	if err != nil {
 		log.Printf("Failed to generate chart snapshot: %v", err)
 		return fmt.Errorf("failed to generate chart snapshot: %w", err)

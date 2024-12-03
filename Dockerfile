@@ -1,24 +1,6 @@
 # Use the official Golang image as a parent image for the build stage
 FROM golang:1.23.1-alpine AS build
 
-# Install Chromium, necessary libraries, and CA certificates
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ttf-freefont \
-    ca-certificates
-
-# Set environment variables for Chrome
-ENV CHROME_BIN=/usr/bin/chromium-browser \
-    CHROME_PATH=/usr/lib/chromium/ \
-    DISPLAY=:99 \
-    CHROME_FLAGS="--no-sandbox"
-
-# Grant permissions if Chromedp has issues running headlessly
-RUN chmod -R 777 /usr/bin/chromium-browser
-
 # Set the working directory inside the container
 WORKDIR /app
 
@@ -48,9 +30,6 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     dumb-init
 
-# Set the environment variable for the Chrome flags
-ENV CHROME_FLAGS="--no-sandbox"
-
 # Set entrypoint to use dumb-init for signal handling
 ENTRYPOINT ["dumb-init", "--"]
 
@@ -63,5 +42,5 @@ COPY --from=build /app/main /app/
 # Command to run the application
 CMD ["./main"]
 
-# Expose the port
+# Expose the port the application listens on
 EXPOSE 8443
