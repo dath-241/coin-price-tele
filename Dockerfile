@@ -13,9 +13,6 @@ RUN go mod download
 # Copy the rest of the source code into the container
 COPY src/ /app/src
 
-# Copy the .env file from src/ to /app/ in the container
-COPY src/.env /app/.env
-
 # Set the working directory to where main.go is located
 WORKDIR /app/src
 
@@ -41,9 +38,6 @@ WORKDIR /app
 
 # Copy the compiled Go binary from the build stage
 COPY --from=build /app/main /app/
-
-# Copy the .env file to the container for runtime
-COPY src/.env /app/.env
 
 # Command to run the application
 CMD ["./main"]
