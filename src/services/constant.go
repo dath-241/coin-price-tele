@@ -1,3 +1,3 @@
 package services
 
-const apiUrl = "https://a2-price.thuanle.me/"
+const apiUrl = "https://dath.hcmutssps.id.vn/"
