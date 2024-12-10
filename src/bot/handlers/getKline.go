@@ -259,6 +259,7 @@ func handleUserSteps(update string, bot *tgbotapi.BotAPI, chatID int64, user *tg
 					sendChartToTelegram(bot, chatID, klineBase(data, symbol, interval))
 				}
 				updateSymbolUsage(symbol)
+				UserSelections[chatID]["step"] = ""
 				return
 			} else {
 				UserSelections[chatID]["step"] = "fetching_data"
