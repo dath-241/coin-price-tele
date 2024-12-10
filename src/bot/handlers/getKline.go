@@ -83,8 +83,6 @@ func fetchKlineDataRealtime(symbol, interval string, cookie string, chatID int64
 		return
 	}
 	services.SetHeadersWithPrice(req, cookie)
-	// req.Header.Set("Accept", "*/*")
-	// req.Header.Set("Cookie", "token=eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJNSyIsInN1YiI6InRyYW5odXkiLCJwYXNzd29yZCI6ImFpIGNobyBjb2kgbeG6rXQga2jhuql1IiwiZXhwIjoxNzMyODUzNjE4fQ.D5MqbwKknk4ZkrGb6hvrceRRbkFdy7bTfCCNVMeg8jo")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -354,19 +352,6 @@ func handleFetchingActions(update string, bot *tgbotapi.BotAPI, chatID int64) {
 			// bot.Send(tgbotapi.NewMessage(chatID, "Fetching data stopped."))
 		}
 		return
-		// UserSelections[chatID]["step"] = ""
-		// fakeMessage := &tgbotapi.Message{
-		// 	Chat: &tgbotapi.Chat{
-		// 		ID: chatID,
-		// 	},
-		// 	From: &tgbotapi.User{
-		// 		FirstName: "System",
-		// 		LastName:  "Bot",
-		// 	},
-		// 	Text: update,
-		// }
-
-		// HandleMessage(fakeMessage, bot)
 	}
 }
 
