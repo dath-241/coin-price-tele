@@ -110,20 +110,12 @@ func fetchKlineDataRealtime(symbol, interval string, cookie string, chatID int64
 				continue
 			}
 			selectedData := map[string]interface{}{
-				// "symbol":     klineData.Symbol,
-				// "openPrice":  formatNumber(klineData.OpenPrice, false),
-				// "closePrice": formatNumber(klineData.ClosePrice, false),
-				// "highPrice":  formatNumber(klineData.HighPrice, false),
-				// "lowPrice":   formatNumber(klineData.LowPrice, false),
-				// "volume":     formatNumber(klineData.Volume, false),
-				// "eventTime":  klineData.EventTime,
-				// "tradeCount": klineData.NumberOfTrades,
 				"symbol":     klineData.Symbol,
-				"openPrice":  formatNumber,
-				"closePrice": formatNumber,
-				"highPrice":  formatNumber,
-				"lowPrice":   formatNumber,
-				"volume":     formatNumber,
+				"openPrice":  formatNumber(klineData.OpenPrice, false),
+				"closePrice": formatNumber(klineData.ClosePrice, false),
+				"highPrice":  formatNumber(klineData.HighPrice, false),
+				"lowPrice":   formatNumber(klineData.LowPrice, false),
+				"volume":     formatNumber(klineData.Volume, false),
 				"eventTime":  klineData.EventTime,
 				"tradeCount": klineData.NumberOfTrades,
 			}
@@ -277,7 +269,7 @@ func handleUserSteps(update string, bot *tgbotapi.BotAPI, chatID int64, user *tg
 				UserSelections[chatID]["isPaused"] = "false"
 
 				msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Start fetching data for %s (%s).", symbol, interval))
-				buttons := []string{"Resume", "Stop", "Chart"}
+				buttons := []string{"Chart", "Resume", "Stop"}
 				var rows []tgbotapi.KeyboardButton
 				for _, btn := range buttons {
 					rows = append(rows, tgbotapi.NewKeyboardButton(btn))
