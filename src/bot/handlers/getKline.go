@@ -250,7 +250,11 @@ func handleUserSteps(update string, bot *tgbotapi.BotAPI, chatID int64, user *tg
 			UserSelections[chatID]["interval"] = interval
 
 			if UserSelections[chatID]["fetchType"] == "ondemand" {
-				limit := 50
+				// Xóa bàn phím hiện tại
+				removeKeyboard := tgbotapi.NewMessage(chatID, fmt.Sprintf("%s : %s", symbol, interval))
+				removeKeyboard.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+				bot.Send(removeKeyboard)
+				limit := 150
 				data, err := getKlineData(symbol, interval, limit) // Pass parameters as needed
 				if err != nil {
 					_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error fetching Kline data: "+err.Error()))
@@ -319,6 +323,10 @@ func handleFetchingActions(update string, bot *tgbotapi.BotAPI, chatID int64) {
 			delete(stopChanMap, chatID)
 			// bot.Send(tgbotapi.NewMessage(chatID, "Fetching data stopped."))
 		}
+		// Xóa bàn phím hiện tại
+		removeKeyboard := tgbotapi.NewMessage(chatID, "Data fetching stopped.")
+		removeKeyboard.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+		bot.Send(removeKeyboard)
 		UserSelections[chatID]["step"] = ""
 	case "Chart":
 		symbol := UserSelections[chatID]["coin"]
@@ -337,19 +345,20 @@ func handleFetchingActions(update string, bot *tgbotapi.BotAPI, chatID int64) {
 			delete(stopChanMap, chatID)
 			// bot.Send(tgbotapi.NewMessage(chatID, "Fetching data stopped."))
 		}
-		UserSelections[chatID]["step"] = ""
-		fakeMessage := &tgbotapi.Message{
-			Chat: &tgbotapi.Chat{
-				ID: chatID,
-			},
-			From: &tgbotapi.User{
-				FirstName: "System",
-				LastName:  "Bot",
-			},
-			Text: update,
-		}
+		return
+		// UserSelections[chatID]["step"] = ""
+		// fakeMessage := &tgbotapi.Message{
+		// 	Chat: &tgbotapi.Chat{
+		// 		ID: chatID,
+		// 	},
+		// 	From: &tgbotapi.User{
+		// 		FirstName: "System",
+		// 		LastName:  "Bot",
+		// 	},
+		// 	Text: update,
+		// }
 
-		HandleMessage(fakeMessage, bot)
+		// HandleMessage(fakeMessage, bot)
 	}
 }
 
