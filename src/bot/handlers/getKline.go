@@ -112,12 +112,20 @@ func fetchKlineDataRealtime(symbol, interval string, cookie string, chatID int64
 				continue
 			}
 			selectedData := map[string]interface{}{
+				// "symbol":     klineData.Symbol,
+				// "openPrice":  formatNumber(klineData.OpenPrice, false),
+				// "closePrice": formatNumber(klineData.ClosePrice, false),
+				// "highPrice":  formatNumber(klineData.HighPrice, false),
+				// "lowPrice":   formatNumber(klineData.LowPrice, false),
+				// "volume":     formatNumber(klineData.Volume, false),
+				// "eventTime":  klineData.EventTime,
+				// "tradeCount": klineData.NumberOfTrades,
 				"symbol":     klineData.Symbol,
-				"openPrice":  formatNumber(klineData.OpenPrice, false),
-				"closePrice": formatNumber(klineData.ClosePrice, false),
-				"highPrice":  formatNumber(klineData.HighPrice, false),
-				"lowPrice":   formatNumber(klineData.LowPrice, false),
-				"volume":     formatNumber(klineData.Volume, false),
+				"openPrice":  formatNumber,
+				"closePrice": formatNumber,
+				"highPrice":  formatNumber,
+				"lowPrice":   formatNumber,
+				"volume":     formatNumber,
 				"eventTime":  klineData.EventTime,
 				"tradeCount": klineData.NumberOfTrades,
 			}
