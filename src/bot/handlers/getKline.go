@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"bufio"
-	"io/ioutil"
+	"io"
 	"sort"
 
 	//"context"
@@ -21,7 +21,7 @@ import (
 
 	// "github.com/chromedp/chromedp"
 	"github.com/go-echarts/go-echarts/v2/charts"
-	"github.com/go-echarts/snapshot-chromedp/render"
+	// "github.com/go-echarts/snapshot-chromedp/render"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -42,7 +42,7 @@ type KlineData struct {
 	Volume             string `json:"volume"`
 }
 
-const baseUrl = "https://a2-price.thuanle.me//api/vip1/get-kline"
+const baseUrl = "https://dath.hcmutssps.id.vn//api/vip1/get-kline"
 
 // UserConnection stores request state for each user
 type UserConnection struct {
@@ -353,7 +353,7 @@ func handleFetchingActions(update string, bot *tgbotapi.BotAPI, chatID int64) {
 }
 
 func getKlineData(symbol string, interval string, options ...int) ([]klineData, error) {
-	apiURL := fmt.Sprintf("https://api.binance.com/api/v3/klines?symbol=%s&interval=%s", symbol, interval)
+	apiURL := fmt.Sprintf("https://api.binance.us/api/v3/klines?symbol=%s&interval=%s", symbol, interval)
 
 	if len(options) > 0 {
 		apiURL = fmt.Sprintf("%s&limit=%d", apiURL, options[0])
@@ -370,7 +370,7 @@ func getKlineData(symbol string, interval string, options ...int) ([]klineData, 
 	}
 
 	var data [][]interface{}
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	json.Unmarshal(body, &data)
 
 	var kd []klineData
@@ -405,24 +405,22 @@ func sendChartToTelegram(bot *tgbotapi.BotAPI, chatID int64, chart *charts.Kline
 	log.Printf("File name generated: %s", fileName)
 
 	// Render chart with Chromedp context
-	err = render.MakeChartSnapshot(chart.RenderContent(), fileName)
+	chart.RenderSnippet()
+	err = MakeChartSnapshot(chart.RenderContent(), fileName)
 	if err != nil {
 		log.Printf("Failed to generate chart snapshot: %v", err)
 		return fmt.Errorf("failed to generate chart snapshot: %w", err)
 	}
 	log.Printf("Chart snapshot generated: %s", fileName)
 
-	imgBytes, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		log.Printf("failed to read generated chart image: %v", err)
-		return fmt.Errorf("failed to read generated chart image: %w", err)
-	}
-	log.Printf("Image read successfully, size: %d bytes", len(imgBytes))
+	// imgBytes, err := ioutil.ReadFile(fileName)
+	// if err != nil {
+	// 	log.Printf("failed to read generated chart image: %v", err)
+	// 	return fmt.Errorf("failed to read generated chart image: %w", err)
+	// }
+	// log.Printf("Image read successfully, size: %d bytes", len(imgBytes))
 
-	msg := tgbotapi.NewPhoto(chatID, tgbotapi.FileBytes{
-		Name:  fileName,
-		Bytes: imgBytes,
-	})
+	msg := tgbotapi.NewPhoto(chatID, tgbotapi.FilePath(fileName))
 
 	if _, err := bot.Send(msg); err != nil {
 		log.Printf("failed to send chart image: %v", err)

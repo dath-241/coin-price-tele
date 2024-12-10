@@ -1,20 +1,5 @@
-# Use the official Golang image as a parent image
-FROM golang:1.23.1-alpine
-
-# Install Chromium and necessary libraries
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ttf-freefont
-
-# Set environment variables for Chrome
-ENV CHROME_BIN=/usr/bin/chromium-browser \
-    CHROME_PATH=/usr/lib/chromium/
-
-# Grant permissions if Chromedp has issues running headlessly
-RUN chmod -R 777 /usr/bin/chromium-browser
+# Use the official Golang image as a parent image for the build stage
+FROM golang:1.23.1-alpine AS build
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -32,10 +17,30 @@ COPY src/ /app/src
 WORKDIR /app/src
 
 # Build the application (output as "main" instead of "main.go")
-RUN go build -o main .
+RUN go build -o /app/main .
 
 # Expose the port that the application listens on
 EXPOSE 8443
 
+# Use the chromedp/headless-shell image for the runtime environment
+FROM chromedp/headless-shell:latest
+
+# Install CA certificates and dumb-init
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    dumb-init
+
+# Set entrypoint to use dumb-init for signal handling
+ENTRYPOINT ["dumb-init", "--"]
+
+# Set the working directory for the final runtime image
+WORKDIR /app
+
+# Copy the compiled Go binary from the build stage
+COPY --from=build /app/main /app/
+
 # Command to run the application
 CMD ["./main"]
+
+# Expose the port the application listens on
+EXPOSE 8443

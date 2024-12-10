@@ -18,7 +18,7 @@ type ErrorResponse struct {
 }
 
 func RegisterPriceThreshold(ID int64, symbol string, threshold float64, is_lower bool, price_type string, bot *tgbotapi.BotAPI) error {
-	url := fmt.Sprintf("https://a2-price.thuanle.me/api/vip2/create?triggerType=%s", price_type)
+	url := fmt.Sprintf("https://dath.hcmutssps.id.vn/api/vip2/create?triggerType=%s", price_type)
 	fmt.Println("price_type:", price_type)
 	method := "POST"
 
