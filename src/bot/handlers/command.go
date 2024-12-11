@@ -114,10 +114,11 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		}
 		response, err := services.GetUserInfo(token)
 		if err != nil {
-			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error getting user info: "+err.Error()))
-		} else {
-			_, _ = bot.Send(tgbotapi.NewMessage(chatID, response))
+			log.Println("Error getting user info:", err)
+			return
 		}
+		handleUserInfo(chatID, bot, response)
+
 	case "/menu":
 		_, err := bot.Send(sendMenu(chatID))
 		if err != nil {
