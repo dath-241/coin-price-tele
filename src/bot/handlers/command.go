@@ -9,6 +9,7 @@ import (
 	"sync"
 	"telegram-bot/config"
 	"telegram-bot/services"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -297,6 +298,44 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			return
 		}
 		go RegisterPriceDifferenceAndFundingRate(chatID, symbol, threshold, is_lower, "funding-rate", bot)
+	case "/create_snooze":
+		if len(args) != 5 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /create_snooze <spot/future> <symbol> <conditionType> <startTime> <endTime>")
+			bot.Send(msg)
+			return
+		}
+		price_type := args[0]
+		symbol := args[1]
+		conditionType := args[2]
+		startTime := args[3]
+		endTime := args[4]
+
+		// Validate time format
+		layout := "2006-01-02T15:04:05"
+		_, err := time.Parse(layout, startTime)
+		if err != nil {
+			msg := tgbotapi.NewMessage(chatID, "Invalid startTime format. Please use format: YYYY-MM-DDThh:mm:ss")
+			bot.Send(msg)
+			return
+		}
+
+		_, err = time.Parse(layout, endTime)
+		if err != nil {
+			msg := tgbotapi.NewMessage(chatID, "Invalid endTime format. Please use format: YYYY-MM-DDThh:mm:ss")
+			bot.Send(msg)
+			return
+		}
+
+		go CreateSnoozeTrigger(chatID, bot, price_type, symbol, conditionType, startTime, endTime)
+	case "/delete_snooze":
+		if len(args) != 2 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /delete_snooze <symbol> <price_type>")
+			bot.Send(msg)
+			return
+		}
+		symbol := args[0]
+		price_type := args[1]
+		DeleteSnoozeTrigger(chatID, bot, symbol, price_type)
 	}
 }
 
