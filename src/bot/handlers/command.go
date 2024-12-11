@@ -28,6 +28,17 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 	user := message.From
 	text := message.Text
 
+	log.Printf("\n\n%s wrote: %s", user.FirstName+" "+user.LastName, text)
+
+	// Get the mute status of the user
+	isMuted, err := services.GetMute(int(user.ID))
+	if err != nil {
+		log.Println("Error getting mute status:", err)
+	}
+	if isMuted && !strings.Contains(text, "/mute") {
+		return
+	}
+
 	// Check if the message is from a group
 	if message.Chat.IsGroup() || message.Chat.IsSuperGroup() {
 		// Check if the message is a command directed at the bot
@@ -39,9 +50,6 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 			handleCommand(message.Chat.ID, command, args, bot, user)
 		}
 	} else {
-		// Handle private messages
-		log.Printf("\n\n%s wrote: %s", user.FirstName+" "+user.LastName, text)
-
 		if strings.HasPrefix(text, "/") {
 			parts := strings.Fields(text)
 			command := parts[0]
@@ -53,6 +61,9 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 
 			if closestSymbol == "" {
 				fmt.Printf("No symbol found.")
+				//msg := tgbotapi.NewMessage(chatID, "No symbol found.")
+				//bot.Send(msg)
+				//
 				return
 			} else {
 				message1 := "/price_spot"
@@ -62,15 +73,20 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 				message2 := "/price_futures"
 				args = []string{closestSymbol1}
 				handleCommand(message.Chat.ID, message2, args, bot, user)
+
 			}
+			// _, err := bot.Send(copyMessage(message))
+			// if err != nil {
+			// 	log.Println("Error sending message:", err)
+			// }
 		}
 	}
+
 }
 
 // Handle commands
 func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.BotAPI, user *tgbotapi.User) {
 	fmt.Println("userID: ", user.ID)
-	fmt.Println("command: ", command)
 	switch command {
 	case "/help":
 		_, err := bot.Send(tgbotapi.NewMessage(chatID, strings.Join(commandList, "\n")))
@@ -79,7 +95,6 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		}
 	case "/start":
 		response, err := services.AuthenticateUser(user.ID)
-		fmt.Println("response: ", response)
 		if err != nil {
 			_, err := bot.Send(tgbotapi.NewMessage(chatID, "Access denied."))
 			if err != nil {
@@ -114,6 +129,85 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 				log.Println("Error storing token:", err)
 			}
 		}
+    
+  case "/register":
+		//syntax /signup <email> <name> <username> <password>
+		if len(args) < 4 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /register <email> <name> <username> <password>")
+			bot.Send(msg)
+			return
+		}
+		email := args[0]
+		name := args[1]
+		username := args[2]
+		password := args[3]
+		response, err := services.Regsiter(email, name, username, password)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		} else {
+			bot.Send(tgbotapi.NewMessage(chatID, response))
+			bot.Send(tgbotapi.NewMessage(chatID, "use /login to log in"))
+		}
+
+	case "/forgotpassword":
+		//syntax /forgotpassword <username>
+		//!cho OTP r lm j nua ?
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /forgotpassword <username>")
+			bot.Send(msg)
+			return
+		}
+		username := args[0]
+		response, err := services.ForgotPassword(username)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		} else {
+			bot.Send(tgbotapi.NewMessage(chatID, response))
+		}
+	case "/testingadmin":
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /forgotpassword <username>")
+			bot.Send(msg)
+			return
+		}
+		username := args[0]
+		token, err := services.GetUserToken(int(chatID))
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		}
+		response, err := services.Testadmin(username, token)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		} else {
+			bot.Send(tgbotapi.NewMessage(chatID, response))
+		}
+
+	case "/changepassword":
+		//syntax: /changepassword <old_password> <new_password> <confirm_newpassword>
+		// if len(args) < 3 {
+		// 	msg := tgbotapi.NewMessage(chatID, "Usage: /changepassword <old_password> <new_password> <confirm_newpassword>")
+		// 	bot.Send(msg)
+		// 	return
+		// }
+		// old_password := args[0]
+		// new_password := args[1]
+		// confirm_newpassword := args[2]
+	case "/mute":
+		if len(args) != 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /mute <on/off>")
+			bot.Send(msg)
+			return
+		}
+		// Get the mute status of the user
+		isMuted := args[0] == "on"
+		err := services.SetMute(int(user.ID), isMuted)
+		if err != nil {
+			log.Println("Error setting mute status:", err)
+			return
+		}
+		bot.Send(tgbotapi.NewMessage(chatID, "Mute status set to "+args[0]))
+	case "/changeinfo":
+		bot.Send(tgbotapi.NewMessage(chatID, "In Progress"))
 	case "/getinfo":
 		token, err := services.GetUserToken(int(user.ID))
 		if err != nil {
@@ -122,10 +216,11 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		}
 		response, err := services.GetUserInfo(token)
 		if err != nil {
-			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error getting user info: "+err.Error()))
-		} else {
-			_, _ = bot.Send(tgbotapi.NewMessage(chatID, response))
+			log.Println("Error getting user info:", err)
+			return
 		}
+		handleUserInfo(chatID, bot, response)
+
 	case "/menu":
 		_, err := bot.Send(sendMenu(chatID))
 		if err != nil {
@@ -162,6 +257,32 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 				log.Println("Error sending message:", err)
 			}
 		}
+	case "/marketcap":
+		log.Print("in marketCap")
+		token, err := services.GetUserToken(int(user.ID))
+		if err != nil {
+			log.Println("Error retrieving token:", err)
+			return
+		}
+
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /marketcap <symbol>")
+			bot.Send(msg)
+			return
+		}
+
+		symbol := args[0]
+		go GetMarketCap(chatID, symbol, bot, token)
+		log.Print("out marketCap")
+
+	case "/volume":
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /volume <symbol>")
+			bot.Send(msg)
+			return
+		}
+		symbol := strings.ToUpper(args[0])
+		go GetTradingVolume(chatID, symbol, bot)
 	case "/price_spot":
 		token, err := services.GetUserToken(int(user.ID))
 		if err != nil {

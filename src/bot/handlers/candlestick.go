@@ -26,7 +26,7 @@ func klineBase(kd []klineData, symbol string, interval string) *charts.Kline {
 
 	kline.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{
-			Title: fmt.Sprintf("Kline Chart - %s : (%s)", symbol, interval),
+			Title: fmt.Sprintf("Kline Chart: %s : (%s)", symbol, interval),
 		}),
 		charts.WithXAxisOpts(opts.XAxis{
 			SplitNumber: 20,

@@ -56,6 +56,10 @@ var commands = []tgbotapi.BotCommand{
 		Command:     "p",
 		Description: "<symbol>",
 	},
+	{
+		Command:     "marketcap",
+		Description: "<symbol>",
+	},
 	//----------------------------------------------------------------------------------------
 	{
 		Command:     "alert_price_with_threshold",
