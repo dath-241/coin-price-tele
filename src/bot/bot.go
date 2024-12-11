@@ -50,7 +50,7 @@ var commands = []tgbotapi.BotCommand{
 	},
 	{
 		Command:     "kline",
-		Description: "Get Kline data and candlestick chart for a symbol ondemand or realtime",
+		Description: "Get Kline data and chart",
 	},
 	{
 		Command:     "p",
@@ -80,6 +80,18 @@ var commands = []tgbotapi.BotCommand{
 	{
 		Command:     "delete_trigger",
 		Description: "<spot/future/price-difference/funding-rate> <symbol>",
+	},
+	{
+		Command:     "create_snooze",
+		Description: "<spot/future> <symbol> <conditionType> <startTime> <endTime>",
+	},
+	{
+		Command:     "delete_snooze",
+		Description: "<symbol> <price_type>",
+	},
+	{
+		Command:     "mute",
+		Description: "<on/off> - Mute bot",
 	},
 }
 

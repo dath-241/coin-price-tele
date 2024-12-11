@@ -76,6 +76,8 @@ func RegisterPriceThreshold(ID int64, symbol string, threshold float64, is_lower
 			bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("Registered %s price of %s above %s threshold successfully!", price_type, symbol, removeTrailingZeros(threshold))))
 		}
 	}
+
+	GetAllTrigger(ID, bot)
 	return nil
 }
 
@@ -150,6 +152,8 @@ func RegisterPriceDifferenceAndFundingRate(ID int64, symbol string, threshold fl
 			bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("Registered %s of %s above %s threshold successfully!", Type, symbol, removeTrailingZeros(threshold))))
 		}
 	}
+
+	GetAllTrigger(ID, bot)
 	return nil
 }
 
@@ -212,28 +216,36 @@ func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
 	var responseText string
 	count := 1
 	for _, trigger := range response {
+		// Add a divider between entries
+		if count > 1 {
+			responseText += "───────────────\n"
+		}
+
 		if trigger.TriggerType == "spot" {
-			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tspotPriceThreshold: %s\n",
+			responseText += fmt.Sprintf("*%d.* 📊\n`Symbol:` *%s*\n`Condition:` _%s_\n`Spot Price:` *%s*\n",
 				count, trigger.Symbol, trigger.Condition, removeTrailingZeros(trigger.SpotPriceThreshold))
 		} else if trigger.TriggerType == "future" {
-			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfuturePriceThreshold: %s\n",
+			responseText += fmt.Sprintf("*%d.* 🔮\n`Symbol:` *%s*\n`Condition:` _%s_\n`Future Price:` *%s*\n",
 				count, trigger.Symbol, trigger.Condition, removeTrailingZeros(trigger.FuturePriceThreshold))
 		} else if trigger.TriggerType == "price-difference" {
-			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tpriceDifferenceThreshold: %s\n",
+			responseText += fmt.Sprintf("*%d.* 📈\n`Symbol:` *%s*\n`Condition:` _%s_\n`Price Diff:` *%s*\n",
 				count, trigger.Symbol, trigger.Condition, removeTrailingZeros(trigger.PriceDifferenceThreshold))
 		} else if trigger.TriggerType == "funding-rate" {
-			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfundingRateThreshold: %s\n",
+			responseText += fmt.Sprintf("*%d.* 💰\n`Symbol:` *%s*\n`Condition:` _%s_\n`Funding Rate:` *%s*\n",
 				count, trigger.Symbol, trigger.Condition, removeTrailingZeros(trigger.FundingRateThreshold))
 		} else if trigger.TriggerTypeTmp == "future" {
-			responseText += fmt.Sprintf("%d.\n\tSymbol: %s\n\tCondition: %s\n\tfuturePriceThreshold: %s\n",
+			responseText += fmt.Sprintf("*%d.* 🔮\n`Symbol:` *%s*\n`Condition:` _%s_\n`Future Price:` *%s*\n",
 				count, trigger.Symbol, trigger.Condition, removeTrailingZeros(trigger.FuturePriceThreshold))
 		}
 		count++
 	}
+
 	if responseText == "" {
-		bot.Send(tgbotapi.NewMessage(ID, "No triggers found"))
+		bot.Send(tgbotapi.NewMessage(ID, "❌ No triggers found"))
 	} else {
-		bot.Send(tgbotapi.NewMessage(ID, fmt.Sprintf("All triggers:\n%v", responseText)))
+		msg := tgbotapi.NewMessage(ID, fmt.Sprintf("🎯 *All Triggers:*\n\n%v", responseText))
+		msg.ParseMode = "Markdown"
+		bot.Send(msg)
 	}
 }
 
@@ -271,6 +283,8 @@ func DeleteTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type str
 	}
 	fmt.Println(string(body))
 	bot.Send(tgbotapi.NewMessage(ID, string(body)))
+	DeleteSnoozeTrigger(ID, bot, symbol, price_type)
+	GetAllTrigger(ID, bot)
 }
 
 func removeTrailingZeros(n float64) string {
@@ -281,4 +295,82 @@ func removeTrailingZeros(n float64) string {
 	str = strings.TrimRight(strings.TrimRight(str, "0"), ".")
 
 	return str
+}
+
+func CreateSnoozeTrigger(ID int64, bot *tgbotapi.BotAPI, price_type string, symbol string, conditionType string, startTime string, endTime string) {
+	url := fmt.Sprintf("https://dath.hcmutssps.id.vn//api/vip2/create/snooze?snoozeType=%s", price_type)
+	method := "POST"
+
+	payload := strings.NewReader(fmt.Sprintf(`{
+		"symbol": "%s",
+		"conditionType": "%s",
+		"startTime": "%s",
+		"endTime": "%s"
+	}`, symbol, conditionType, startTime, endTime))
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, payload)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+	token, err := services.GetUserToken(int(ID))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	req.Header.Add("Cookie", fmt.Sprintf("token=%s", token))
+
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(string(body))
+	bot.Send(tgbotapi.NewMessage(ID, string(body)))
+}
+
+func DeleteSnoozeTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type string) {
+	url := fmt.Sprintf("https://dath.hcmutssps.id.vn//api/vip2/delete/snooze/%s?snoozeType=%s", symbol, price_type)
+	method := "DELETE"
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, nil)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	req.Header.Add("Accept", "application/json")
+	token, err := services.GetUserToken(int(ID))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	req.Header.Add("Cookie", fmt.Sprintf("token=%s", token))
+
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	bot.Send(tgbotapi.NewMessage(ID, string(body)))
+	fmt.Println(string(body))
 }
