@@ -1,4 +1,4 @@
-name: Deploy to Heroku
+name: Deploy to DigitalOcean
 
 on:
   pull_request:
@@ -13,10 +13,11 @@ jobs:
     runs-on: self-hosted
 
     steps:
+      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Step 1: Log in to DigitalOcean Container Registry
+      # Step 2: Log in to DigitalOcean Container Registry
       - name: Log in to DigitalOcean Container Registry
         env:
           DOCKER_REGISTRY: registry.digitalocean.com/clgslsm
@@ -25,7 +26,15 @@ jobs:
         run: |
           echo $DOCKER_PASSWORD | docker login $DOCKER_REGISTRY -u $DOCKER_USERNAME --password-stdin
 
-      # Step 2: Build Docker image and push to DigitalOcean Container Registry
+      # Step 3: Clean up old images in the registry
+      - name: Clean up old images
+        env:
+          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+        run: |
+          # Keep the last 3 image tags and delete the rest
+          doctl registry repository list-tags clgslsm/coin-price-telegram-bot --format Tag | tail -n +4 | xargs -I {} doctl registry repository delete-tag clgslsm/coin-price-telegram-bot:{}
+
+      # Step 4: Build and push Docker image
       - name: Build and push Docker image
         env:
           DOCKER_REGISTRY: registry.digitalocean.com/clgslsm
@@ -33,7 +42,7 @@ jobs:
           docker build -t $DOCKER_REGISTRY/coin-price-telegram-bot:latest .
           docker push $DOCKER_REGISTRY/coin-price-telegram-bot:latest
 
-      # Step 3: Deploy the bot on the self-hosted runner (DigitalOcean droplet)
+      # Step 5: Deploy the bot on the self-hosted runner (DigitalOcean droplet)
       - name: Run Docker container
         env:
           DOCKER_REGISTRY: registry.digitalocean.com/clgslsm
@@ -52,5 +61,6 @@ jobs:
             -e GO_ENV=production \
             -e PORT=8443 \
             -e WEBHOOK_URL=${{ secrets.WEBHOOK_URL }} \
-            -e BOT_USERNAME=${{ tele_coin_da241_bot }} \
+            -e BOT_USERNAME=${{ secrets.BOT_USERNAME }} \
             $DOCKER_REGISTRY/coin-price-telegram-bot:latest
+

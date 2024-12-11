@@ -83,8 +83,6 @@ func fetchKlineDataRealtime(symbol, interval string, cookie string, chatID int64
 		return
 	}
 	services.SetHeadersWithPrice(req, cookie)
-	// req.Header.Set("Accept", "*/*")
-	// req.Header.Set("Cookie", "token=eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJNSyIsInN1YiI6InRyYW5odXkiLCJwYXNzd29yZCI6ImFpIGNobyBjb2kgbeG6rXQga2jhuql1IiwiZXhwIjoxNzMyODUzNjE4fQ.D5MqbwKknk4ZkrGb6hvrceRRbkFdy7bTfCCNVMeg8jo")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -164,11 +162,10 @@ func getTopSymbols(n int) []string {
 
 // Handle "Other" input
 func handleOtherInput(bot *tgbotapi.BotAPI, chatID int64, input string) {
-
-	if isValidSymbol(input) {
-
-		updateSymbolUsage(input)
-		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Symbol '%s' added to the list!", input))
+	find := FindFuturesSymbol(input)
+	if isValidSymbol(find) {
+		updateSymbolUsage(find)
+		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Symbol '%s' added to the list!", find))
 		for key, value := range symbolUsage {
 			fmt.Printf("Symbol: %s, Usage: %d\n", key, value)
 		}
@@ -232,7 +229,7 @@ func handleUserSteps(update string, bot *tgbotapi.BotAPI, chatID int64, user *tg
 		case "other_input":
 			symbol := update
 			handleOtherInput(bot, chatID, symbol)
-			UserSelections[chatID]["coin"] = symbol
+			UserSelections[chatID]["coin"] = FindFuturesSymbol(symbol)
 			UserSelections[chatID]["step"] = "interval_selection"
 
 			msg := tgbotapi.NewMessage(chatID, "Choose the interval:")
@@ -250,7 +247,11 @@ func handleUserSteps(update string, bot *tgbotapi.BotAPI, chatID int64, user *tg
 			UserSelections[chatID]["interval"] = interval
 
 			if UserSelections[chatID]["fetchType"] == "ondemand" {
-				limit := 50
+				// Xóa bàn phím hiện tại
+				removeKeyboard := tgbotapi.NewMessage(chatID, fmt.Sprintf("%s : %s", symbol, interval))
+				removeKeyboard.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+				bot.Send(removeKeyboard)
+				limit := 150
 				data, err := getKlineData(symbol, interval, limit) // Pass parameters as needed
 				if err != nil {
 					_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error fetching Kline data: "+err.Error()))
@@ -259,6 +260,7 @@ func handleUserSteps(update string, bot *tgbotapi.BotAPI, chatID int64, user *tg
 					sendChartToTelegram(bot, chatID, klineBase(data, symbol, interval))
 				}
 				updateSymbolUsage(symbol)
+				UserSelections[chatID]["step"] = ""
 				return
 			} else {
 				UserSelections[chatID]["step"] = "fetching_data"
@@ -266,7 +268,7 @@ func handleUserSteps(update string, bot *tgbotapi.BotAPI, chatID int64, user *tg
 				UserSelections[chatID]["isPaused"] = "false"
 
 				msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Start fetching data for %s (%s).", symbol, interval))
-				buttons := []string{"Resume", "Stop", "Chart"}
+				buttons := []string{"Chart", "Resume", "Stop"}
 				var rows []tgbotapi.KeyboardButton
 				for _, btn := range buttons {
 					rows = append(rows, tgbotapi.NewKeyboardButton(btn))
@@ -318,6 +320,10 @@ func handleFetchingActions(update string, bot *tgbotapi.BotAPI, chatID int64) {
 			delete(stopChanMap, chatID)
 			// bot.Send(tgbotapi.NewMessage(chatID, "Fetching data stopped."))
 		}
+		// Xóa bàn phím hiện tại
+		removeKeyboard := tgbotapi.NewMessage(chatID, "Data fetching stopped.")
+		removeKeyboard.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+		bot.Send(removeKeyboard)
 		UserSelections[chatID]["step"] = ""
 	case "Chart":
 		symbol := UserSelections[chatID]["coin"]
@@ -336,19 +342,7 @@ func handleFetchingActions(update string, bot *tgbotapi.BotAPI, chatID int64) {
 			delete(stopChanMap, chatID)
 			// bot.Send(tgbotapi.NewMessage(chatID, "Fetching data stopped."))
 		}
-		UserSelections[chatID]["step"] = ""
-		fakeMessage := &tgbotapi.Message{
-			Chat: &tgbotapi.Chat{
-				ID: chatID,
-			},
-			From: &tgbotapi.User{
-				FirstName: "System",
-				LastName:  "Bot",
-			},
-			Text: update,
-		}
-
-		HandleMessage(fakeMessage, bot)
+		return
 	}
 }
 
