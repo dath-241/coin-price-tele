@@ -44,10 +44,11 @@ func LogIn(username, password string) (string, string, error) {
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 
-	token := resp.Cookies()[0].Value
-	if err != nil {
-		return "", "", err
+	// If the response is 401, return the error message
+	if resp.StatusCode != http.StatusOK {
+		return "", "", fmt.Errorf("invalid username or password")
 	}
+	token := resp.Cookies()[0].Value
 	defer resp.Body.Close()
 
 	message, err := io.ReadAll(resp.Body)
