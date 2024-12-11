@@ -36,8 +36,12 @@ ENTRYPOINT ["dumb-init", "--"]
 # Set the working directory for the final runtime image
 WORKDIR /app
 
-# Copy the compiled Go binary from the build stage
+# Copy the compiled Go binary AND the required text file from the build stage
 COPY --from=build /app/main /app/
+COPY --from=build /app/src/services/spot_symbols_sorted.txt /app/services/
+COPY --from=build /app/src/services/futures_symbols_sorted.txt /app/services/
+COPY --from=build /app/src/services/spot_symbols.txt /app/services/
+COPY --from=build /app/src/services/futures_symbols.txt /app/services/
 
 # Command to run the application
 CMD ["./main"]
