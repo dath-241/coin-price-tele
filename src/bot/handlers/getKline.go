@@ -162,11 +162,10 @@ func getTopSymbols(n int) []string {
 
 // Handle "Other" input
 func handleOtherInput(bot *tgbotapi.BotAPI, chatID int64, input string) {
-
-	if isValidSymbol(input) {
-
-		updateSymbolUsage(input)
-		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Symbol '%s' added to the list!", input))
+	find := FindFuturesSymbol(input)
+	if isValidSymbol(find) {
+		updateSymbolUsage(find)
+		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Symbol '%s' added to the list!", find))
 		for key, value := range symbolUsage {
 			fmt.Printf("Symbol: %s, Usage: %d\n", key, value)
 		}
@@ -230,7 +229,7 @@ func handleUserSteps(update string, bot *tgbotapi.BotAPI, chatID int64, user *tg
 		case "other_input":
 			symbol := update
 			handleOtherInput(bot, chatID, symbol)
-			UserSelections[chatID]["coin"] = symbol
+			UserSelections[chatID]["coin"] = FindFuturesSymbol(symbol)
 			UserSelections[chatID]["step"] = "interval_selection"
 
 			msg := tgbotapi.NewMessage(chatID, "Choose the interval:")
