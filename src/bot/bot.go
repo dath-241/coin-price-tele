@@ -82,6 +82,14 @@ var commands = []tgbotapi.BotCommand{
 		Description: "<spot/future/price-difference/funding-rate> <symbol>",
 	},
 	{
+		Command:     "create_snooze",
+		Description: "<spot/future> <symbol> <conditionType> <startTime> <endTime>",
+	},
+	{
+		Command:     "delete_snooze",
+		Description: "<symbol> <price_type>",
+	},
+	{
 		Command:     "mute",
 		Description: "<on/off> - Mute bot",
 	},
