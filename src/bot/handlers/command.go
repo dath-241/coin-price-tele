@@ -128,8 +128,8 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 				log.Println("Error storing token:", err)
 			}
 		}
-    
-  case "/register":
+
+	case "/register":
 		//syntax /signup <email> <name> <username> <password>
 		if len(args) < 4 {
 			msg := tgbotapi.NewMessage(chatID, "Usage: /register <email> <name> <username> <password>")
@@ -422,6 +422,14 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 }
 
 func HandleKlineCommand(chatID int64, command string, bot *tgbotapi.BotAPI, user *tgbotapi.User) {
+	// Get the mute status of the user
+	isMuted, err := services.GetMute(int(user.ID))
+	if err != nil {
+		log.Println("Error getting mute status:", err)
+	}
+	if isMuted && !strings.Contains(command, "/mute") {
+		return
+	}
 	switch command {
 	case "/kline":
 		updateSymbolUsage("BTCUSDT")
