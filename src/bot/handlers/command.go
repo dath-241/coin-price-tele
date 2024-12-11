@@ -450,6 +450,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 	}
 }
 
+// cmmt
 func sendMenu(chatID int64) tgbotapi.MessageConfig {
 	msg := tgbotapi.NewMessage(chatID, firstMenu)
 	msg.ParseMode = tgbotapi.ModeHTML
