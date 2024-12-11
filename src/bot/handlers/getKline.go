@@ -300,7 +300,6 @@ func handleUserSteps(update string, bot *tgbotapi.BotAPI, chatID int64, user *tg
 				if UserSelections[chatID]["fetchType"] == "realtime" {
 					go fetchKlineDataRealtime(symbol, interval, token, chatID, bot)
 				}
-
 				updateSymbolUsage(symbol)
 			}
 		case "fetching_data":
