@@ -2,7 +2,8 @@ package handlers
 
 import (
 	"bufio"
-	"io/ioutil"
+	"io"
+	"sort"
 
 	//"context"
 	"encoding/json"
@@ -20,7 +21,7 @@ import (
 
 	// "github.com/chromedp/chromedp"
 	"github.com/go-echarts/go-echarts/v2/charts"
-	"github.com/go-echarts/snapshot-chromedp/render"
+	// "github.com/go-echarts/snapshot-chromedp/render"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -41,7 +42,7 @@ type KlineData struct {
 	Volume             string `json:"volume"`
 }
 
-const baseUrl = "https://dath.hcmutssps.id.vn/api/vip1/get-kline"
+const baseUrl = "https://dath.hcmutssps.id.vn//api/vip1/get-kline"
 
 // UserConnection stores request state for each user
 type UserConnection struct {
@@ -51,65 +52,315 @@ type UserConnection struct {
 // Tạo map để lưu trạng thái người dùng
 var userConnections = make(map[int64]*UserConnection)
 var mapMutex = sync.Mutex{}
+var UserSelections = make(map[int64]map[string]string) // To track user choices
+var stopChanMap = make(map[int64]chan bool)            // To manage stop signals for each user
+var symbolUsage = make(map[string]int)                 // Track symbol usage for popularity
+// Update symbol usage
+func updateSymbolUsage(symbol string) {
+	// mapMutex.Lock()
+	// defer mapMutex.Unlock()
+	symbolUsage[symbol]++
+}
 
-// fetchKlineData sends a GET request to the backend API with cookie for security
-func fetchKlineData(symbol, interval, cookie string, chatID int64, bot *tgbotapi.BotAPI) {
+// Function to format JSON as Telegram code block
+func formatJSONResponse(data interface{}) string {
+	jsonData, err := json.MarshalIndent(data, "", "    ")
+	if err != nil {
+		log.Printf("Error formatting JSON: %v", err)
+		return "Error formatting data"
+	}
+
+	// Wrap JSON in Telegram MarkdownV2 code block
+	return fmt.Sprintf("```json\n%s\n```", jsonData)
+}
+
+// Fetch Kline Data
+func fetchKlineDataRealtime(symbol, interval string, cookie string, chatID int64, bot *tgbotapi.BotAPI) {
 	reqUrl := fmt.Sprintf("%s?symbols=%s&interval=%s", baseUrl, symbol, interval)
-	log.Printf("API URL: %s", reqUrl)
 	req, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
-		bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Request creation error: %v", err)))
+		bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Error creating request: %v", err)))
 		return
 	}
-	// req.Header.Set("Accept", "*/*")
-	// req.Header.Set("Cookie", cookie)
 	services.SetHeadersWithPrice(req, cookie)
-
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Failed to fetch Kline data: %v", err)))
+		bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Error fetching Kline data: %v", err)))
 		return
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Received status code %d", resp.StatusCode)))
-		return
+	stopChan := stopChanMap[chatID]
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		select {
+		case <-stopChan:
+			// bot.Send(tgbotapi.NewMessage(chatID, "Stopped fetching Kline data."))
+			return
+		default:
+			if UserSelections[chatID]["isPaused"] == "true" {
+				continue
+			}
+			line := strings.TrimPrefix(scanner.Text(), "data:")
+			var klineData KlineData
+			err := json.Unmarshal([]byte(line), &klineData)
+			if err != nil {
+				// log.Printf("Error decoding response: %v", err)
+				continue
+			}
+			selectedData := map[string]interface{}{
+				"symbol":     klineData.Symbol,
+				"openPrice":  formatNumber(klineData.OpenPrice, false),
+				"closePrice": formatNumber(klineData.ClosePrice, false),
+				"highPrice":  formatNumber(klineData.HighPrice, false),
+				"lowPrice":   formatNumber(klineData.LowPrice, false),
+				"volume":     formatNumber(klineData.Volume, false),
+				"eventTime":  klineData.EventTime,
+				"tradeCount": klineData.NumberOfTrades,
+			}
+
+			// Format selected fields as JSON and send to Telegram
+			jsonMessage := formatJSONResponse(selectedData)
+			msg := tgbotapi.NewMessage(chatID, jsonMessage)
+			msg.ParseMode = "MarkdownV2" // Use MarkdownV2 to display JSON properly
+			bot.Send(msg)
+			time.Sleep(time.Second)
+		}
 	}
 
-	scanner := bufio.NewScanner(resp.Body)
-	var line string
-	for scanner.Scan() {
-		mapMutex.Lock()
-		userConn := userConnections[chatID]
-		if userConn == nil || !userConn.isStreaming {
-			mapMutex.Unlock()
-			return // Thoát vòng lặp khi isStreaming = false
-		}
-		mapMutex.Unlock()
-		// Lấy dòng dữ liệu và loại bỏ tiền tố "data:"
-		line = strings.TrimPrefix(scanner.Text(), "data:")
+	if err := scanner.Err(); err != nil {
+		bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Error reading response: %v", err)))
+	}
+}
 
-		// Giải mã JSON
-		var klineData KlineData
-		err := json.Unmarshal([]byte(line), &klineData)
+// Get top N symbols
+func getTopSymbols(n int) []string {
+	// mapMutex.Lock()
+	// defer mapMutex.Unlock()
+	type kv struct {
+		Key   string
+		Value int
+	}
+	var sorted []kv
+	for k, v := range symbolUsage {
+		sorted = append(sorted, kv{k, v})
+	}
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].Value > sorted[j].Value
+	})
+	var topSymbols []string
+	for i, kv := range sorted {
+		if i >= n {
+			break
+		}
+		topSymbols = append(topSymbols, kv.Key)
+	}
+
+	return topSymbols
+}
+
+// Handle "Other" input
+func handleOtherInput(bot *tgbotapi.BotAPI, chatID int64, input string) bool {
+	find := FindFuturesSymbol(input)
+	if isValidSymbol(find) {
+		updateSymbolUsage(find)
+		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Symbol '%s' added to the list!", find))
+		for key, value := range symbolUsage {
+			fmt.Printf("Symbol: %s, Usage: %d\n", key, value)
+		}
+		bot.Send(msg)
+		return true
+		// print(input)
+	} else {
+		msg := tgbotapi.NewMessage(chatID, "Invalid symbol. Please try again.")
+		bot.Send(msg)
+	}
+	return false
+}
+
+// Validate symbol (placeholder for actual validation logic)
+func isValidSymbol(symbol string) bool {
+	return len(symbol) > 0 // Replace with actual validation logic or API call
+}
+
+// Handle user steps
+func handleUserSteps(update string, bot *tgbotapi.BotAPI, chatID int64, user *tgbotapi.User) {
+	mapMutex.Lock()
+	defer mapMutex.Unlock()
+
+	if selection, ok := UserSelections[chatID]; ok {
+		switch selection["step"] {
+		case "fetch_type_selection":
+			fetchType := update
+			if fetchType == "ondemand" || fetchType == "realtime" {
+				UserSelections[chatID]["fetchType"] = fetchType
+				UserSelections[chatID]["step"] = "coin_selection"
+				topSymbols := getTopSymbols(3)
+				topSymbols = append(topSymbols, "Other")
+				msg := tgbotapi.NewMessage(chatID, "Select the coin:")
+				var rows []tgbotapi.KeyboardButton
+				for _, symbol := range topSymbols {
+					rows = append(rows, tgbotapi.NewKeyboardButton(symbol))
+				}
+				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(rows)
+				bot.Send(msg)
+			} else {
+				bot.Send(tgbotapi.NewMessage(chatID, "Invalid fetch type. Please choose 'ondemand' or 'realtime'."))
+			}
+
+		case "coin_selection":
+			symbol := update
+			if symbol == "Other" {
+				bot.Send(tgbotapi.NewMessage(chatID, "Please enter the symbol:"))
+				UserSelections[chatID]["step"] = "other_input"
+			} else {
+				UserSelections[chatID]["coin"] = symbol
+				UserSelections[chatID]["step"] = "interval_selection"
+
+				msg := tgbotapi.NewMessage(chatID, "Choose the interval:")
+				intervals := []string{"1m", "5m", "1h", "1d"}
+				var rows []tgbotapi.KeyboardButton
+				for _, interval := range intervals {
+					rows = append(rows, tgbotapi.NewKeyboardButton(interval))
+				}
+				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(rows)
+				bot.Send(msg)
+			}
+
+		case "other_input":
+			symbol := update
+			if handleOtherInput(bot, chatID, symbol) {
+
+				UserSelections[chatID]["coin"] = FindFuturesSymbol(symbol)
+				UserSelections[chatID]["step"] = "interval_selection"
+
+				msg := tgbotapi.NewMessage(chatID, "Choose the interval:")
+				intervals := []string{"1m", "5m", "1h", "1d"}
+				var rows []tgbotapi.KeyboardButton
+				for _, interval := range intervals {
+					rows = append(rows, tgbotapi.NewKeyboardButton(interval))
+				}
+				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(rows)
+				bot.Send(msg)
+			} else {
+				topSymbols := getTopSymbols(3)
+				topSymbols = append(topSymbols, "Other")
+				msg := tgbotapi.NewMessage(chatID, "Select the coin:")
+				var rows []tgbotapi.KeyboardButton
+				for _, symbol := range topSymbols {
+					rows = append(rows, tgbotapi.NewKeyboardButton(symbol))
+				}
+				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(rows)
+				bot.Send(msg)
+			}
+
+		case "interval_selection":
+			interval := update
+			symbol := UserSelections[chatID]["coin"]
+			UserSelections[chatID]["interval"] = interval
+
+			if UserSelections[chatID]["fetchType"] == "ondemand" {
+				// Xóa bàn phím hiện tại
+				removeKeyboard := tgbotapi.NewMessage(chatID, fmt.Sprintf("%s : %s", symbol, interval))
+				removeKeyboard.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+				bot.Send(removeKeyboard)
+				limit := 150
+				data, err := getKlineData(symbol, interval, limit) // Pass parameters as needed
+				if err != nil {
+					_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error fetching Kline data: "+err.Error()))
+				} else {
+					// log.Println(data)
+					sendChartToTelegram(bot, chatID, klineBase(data, symbol, interval))
+				}
+				updateSymbolUsage(symbol)
+				UserSelections[chatID]["step"] = ""
+				return
+			} else {
+				UserSelections[chatID]["step"] = "fetching_data"
+				UserSelections[chatID]["isFetching"] = "true"
+				UserSelections[chatID]["isPaused"] = "false"
+
+				msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Start fetching data for %s (%s).", symbol, interval))
+				buttons := []string{"Chart", "Resume", "Stop"}
+				var rows []tgbotapi.KeyboardButton
+				for _, btn := range buttons {
+					rows = append(rows, tgbotapi.NewKeyboardButton(btn))
+				}
+				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(rows)
+				bot.Send(msg)
+				// mapMutex.Lock()
+				userConnections[chatID] = &UserConnection{isStreaming: true}
+				// mapMutex.Unlock()
+				token, err := services.GetUserToken(int(user.ID))
+				if err != nil {
+					log.Println("Error retrieving token:", err)
+					return
+				}
+				if UserSelections[chatID]["fetchType"] == "realtime" {
+					go fetchKlineDataRealtime(symbol, interval, token, chatID, bot)
+				}
+				updateSymbolUsage(symbol)
+			}
+		case "fetching_data":
+			handleFetchingActions(update, bot, chatID)
+			log.Print(update)
+
+		default:
+			bot.Send(tgbotapi.NewMessage(chatID, "Unknown step. Please restart the process."))
+		}
+	}
+}
+
+// Handle fetching actions
+func handleFetchingActions(update string, bot *tgbotapi.BotAPI, chatID int64) {
+	action := update
+	stopChan := stopChanMap[chatID]
+
+	switch action {
+	case "Resume":
+		if UserSelections[chatID]["isFetching"] == "true" {
+			UserSelections[chatID]["isPaused"] = "true"
+			UserSelections[chatID]["isFetching"] = "false"
+		} else {
+			UserSelections[chatID]["isPaused"] = "false"
+			UserSelections[chatID]["isFetching"] = "true"
+		}
+		// go fetchKlineData(symbol, interval, chatID, bot)
+	case "Stop":
+		if stopChan != nil {
+			close(stopChan)
+			delete(stopChanMap, chatID)
+			// bot.Send(tgbotapi.NewMessage(chatID, "Fetching data stopped."))
+		}
+		// Xóa bàn phím hiện tại
+		removeKeyboard := tgbotapi.NewMessage(chatID, "Data fetching stopped.")
+		removeKeyboard.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+		bot.Send(removeKeyboard)
+		UserSelections[chatID]["step"] = ""
+	case "Chart":
+		symbol := UserSelections[chatID]["coin"]
+		interval := UserSelections[chatID]["interval"]
+		limit := 50
+		data, err := getKlineData(symbol, interval, limit) // Pass parameters as needed
 		if err != nil {
-			// bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Error decoding response: %v", err)))
-			continue
+			_, _ = bot.Send(tgbotapi.NewMessage(chatID, "Error fetching Kline data: "+err.Error()))
+		} else {
+			// log.Println(data)
+			sendChartToTelegram(bot, chatID, klineBase(data, symbol, interval))
 		}
-
-		// Gửi dữ liệu đã giải mã đến người dùng Telegram
-		klineMessage := fmt.Sprintf("Real-time Kline data:\nOpen: %s\nHigh: %s\nLow: %s\nClose: %s",
-			klineData.OpenPrice, klineData.HighPrice, klineData.LowPrice, klineData.ClosePrice)
-		bot.Send(tgbotapi.NewMessage(chatID, klineMessage))
-
-		time.Sleep(time.Second) // Tránh spam tin nhắn
+	default:
+		if stopChan != nil {
+			close(stopChan)
+			delete(stopChanMap, chatID)
+			// bot.Send(tgbotapi.NewMessage(chatID, "Fetching data stopped."))
+		}
+		return
 	}
 }
 
 func getKlineData(symbol string, interval string, options ...int) ([]klineData, error) {
-	apiURL := fmt.Sprintf("https://api.binance.com/api/v3/klines?symbol=%s&interval=%s", symbol, interval)
+	apiURL := fmt.Sprintf("https://api.binance.us/api/v3/klines?symbol=%s&interval=%s", symbol, interval)
 
 	if len(options) > 0 {
 		apiURL = fmt.Sprintf("%s&limit=%d", apiURL, options[0])
@@ -126,7 +377,7 @@ func getKlineData(symbol string, interval string, options ...int) ([]klineData, 
 	}
 
 	var data [][]interface{}
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	json.Unmarshal(body, &data)
 
 	var kd []klineData
@@ -161,24 +412,22 @@ func sendChartToTelegram(bot *tgbotapi.BotAPI, chatID int64, chart *charts.Kline
 	log.Printf("File name generated: %s", fileName)
 
 	// Render chart with Chromedp context
-	err = render.MakeChartSnapshot(chart.RenderContent(), fileName)
+	chart.RenderSnippet()
+	err = MakeChartSnapshot(chart.RenderContent(), fileName)
 	if err != nil {
 		log.Printf("Failed to generate chart snapshot: %v", err)
 		return fmt.Errorf("failed to generate chart snapshot: %w", err)
 	}
 	log.Printf("Chart snapshot generated: %s", fileName)
 
-	imgBytes, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		log.Printf("failed to read generated chart image: %v", err)
-		return fmt.Errorf("failed to read generated chart image: %w", err)
-	}
-	log.Printf("Image read successfully, size: %d bytes", len(imgBytes))
+	// imgBytes, err := ioutil.ReadFile(fileName)
+	// if err != nil {
+	// 	log.Printf("failed to read generated chart image: %v", err)
+	// 	return fmt.Errorf("failed to read generated chart image: %w", err)
+	// }
+	// log.Printf("Image read successfully, size: %d bytes", len(imgBytes))
 
-	msg := tgbotapi.NewPhoto(chatID, tgbotapi.FileBytes{
-		Name:  fileName,
-		Bytes: imgBytes,
-	})
+	msg := tgbotapi.NewPhoto(chatID, tgbotapi.FilePath(fileName))
 
 	if _, err := bot.Send(msg); err != nil {
 		log.Printf("failed to send chart image: %v", err)

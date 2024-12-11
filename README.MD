@@ -1,5 +1,8 @@
 # Coin-Price-Tele
 
+<a href="https://ibb.co/z5dRykh"><img src="https://i.ibb.co/cvqFGmc/image.png" width="250" height="300" alt="image" border="0" /></a>
+
+Link telegram bot: https://t.me/tele_coin_da241_bot
 ## Giới thiệu
 
 ## Mục tiêu của dự án
