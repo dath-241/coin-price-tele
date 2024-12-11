@@ -533,11 +533,15 @@ func FindSpotSymbol(input string) string {
 
 	// Đọc file symbols
 	currentDir, err := os.Getwd()
+	// Try currentDir or currentDir/src
+	filePath := filepath.Join(currentDir, "services", "spot_symbols_sorted.txt")
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		filePath = filepath.Join(currentDir, "src", "services", "spot_symbols_sorted.txt")
+	}
 	if err != nil {
 		log.Printf("Error getting current directory: %v", err)
 		return ""
 	}
-	filePath := filepath.Join(currentDir, "services", "spot_symbols_sorted.txt")
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -596,11 +600,15 @@ func FindFuturesSymbol(input string) string {
 
 	// Đọc file symbols
 	currentDir, err := os.Getwd()
+	// Try currentDir or currentDir/src
+	filePath := filepath.Join(currentDir, "services", "futures_symbols_sorted.txt")
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		filePath = filepath.Join(currentDir, "src", "services", "futures_symbols_sorted.txt")
+	}
 	if err != nil {
 		log.Printf("Error getting current directory: %v", err)
 		return ""
 	}
-	filePath := filepath.Join(currentDir, "services", "futures_symbols_sorted.txt")
 
 	file, err := os.Open(filePath)
 	if err != nil {
