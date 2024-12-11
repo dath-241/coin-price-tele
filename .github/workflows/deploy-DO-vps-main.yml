@@ -61,4 +61,7 @@ jobs:
             -e GO_ENV=production \
             -e PORT=8443 \
             -e WEBHOOK_URL=${{ secrets.WEBHOOK_URL }} \
+            -e BOT_USERNAME=${{ secrets.BOT_USERNAME }} \
+            -e CMC_API_KEY=${{ secrets.CMC_API_KEY }} \
             $DOCKER_REGISTRY/coin-price-telegram-bot:latest
+
