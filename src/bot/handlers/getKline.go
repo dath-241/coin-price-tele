@@ -161,7 +161,7 @@ func getTopSymbols(n int) []string {
 }
 
 // Handle "Other" input
-func handleOtherInput(bot *tgbotapi.BotAPI, chatID int64, input string) {
+func handleOtherInput(bot *tgbotapi.BotAPI, chatID int64, input string) bool {
 	find := FindFuturesSymbol(input)
 	if isValidSymbol(find) {
 		updateSymbolUsage(find)
@@ -170,11 +170,13 @@ func handleOtherInput(bot *tgbotapi.BotAPI, chatID int64, input string) {
 			fmt.Printf("Symbol: %s, Usage: %d\n", key, value)
 		}
 		bot.Send(msg)
+		return true
 		// print(input)
 	} else {
 		msg := tgbotapi.NewMessage(chatID, "Invalid symbol. Please try again.")
 		bot.Send(msg)
 	}
+	return false
 }
 
 // Validate symbol (placeholder for actual validation logic)
@@ -228,18 +230,30 @@ func handleUserSteps(update string, bot *tgbotapi.BotAPI, chatID int64, user *tg
 
 		case "other_input":
 			symbol := update
-			handleOtherInput(bot, chatID, symbol)
-			UserSelections[chatID]["coin"] = FindFuturesSymbol(symbol)
-			UserSelections[chatID]["step"] = "interval_selection"
+			if handleOtherInput(bot, chatID, symbol) {
 
-			msg := tgbotapi.NewMessage(chatID, "Choose the interval:")
-			intervals := []string{"1m", "5m", "1h", "1d"}
-			var rows []tgbotapi.KeyboardButton
-			for _, interval := range intervals {
-				rows = append(rows, tgbotapi.NewKeyboardButton(interval))
+				UserSelections[chatID]["coin"] = FindFuturesSymbol(symbol)
+				UserSelections[chatID]["step"] = "interval_selection"
+
+				msg := tgbotapi.NewMessage(chatID, "Choose the interval:")
+				intervals := []string{"1m", "5m", "1h", "1d"}
+				var rows []tgbotapi.KeyboardButton
+				for _, interval := range intervals {
+					rows = append(rows, tgbotapi.NewKeyboardButton(interval))
+				}
+				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(rows)
+				bot.Send(msg)
+			} else {
+				topSymbols := getTopSymbols(3)
+				topSymbols = append(topSymbols, "Other")
+				msg := tgbotapi.NewMessage(chatID, "Select the coin:")
+				var rows []tgbotapi.KeyboardButton
+				for _, symbol := range topSymbols {
+					rows = append(rows, tgbotapi.NewKeyboardButton(symbol))
+				}
+				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(rows)
+				bot.Send(msg)
 			}
-			msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(rows)
-			bot.Send(msg)
 
 		case "interval_selection":
 			interval := update
@@ -286,7 +300,6 @@ func handleUserSteps(update string, bot *tgbotapi.BotAPI, chatID int64, user *tg
 				if UserSelections[chatID]["fetchType"] == "realtime" {
 					go fetchKlineDataRealtime(symbol, interval, token, chatID, bot)
 				}
-
 				updateSymbolUsage(symbol)
 			}
 		case "fetching_data":
