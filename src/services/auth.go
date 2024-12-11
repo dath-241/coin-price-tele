@@ -48,7 +48,6 @@ func LogIn(username, password string) (string, string, error) {
 	if resp.StatusCode != http.StatusOK {
 		return "", "", fmt.Errorf("invalid username or password")
 	}
-
 	token := resp.Cookies()[0].Value
 	defer resp.Body.Close()
 

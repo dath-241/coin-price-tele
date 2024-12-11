@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
+	"telegram-bot/config"
 	"telegram-bot/services"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -29,36 +29,58 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 
 	log.Printf("\n\n%s wrote: %s", user.FirstName+" "+user.LastName, text)
 
-	if strings.HasPrefix(text, "/") {
-		parts := strings.Fields(text)
-		command := parts[0]
-		args := parts[1:]
-		handleCommand(message.Chat.ID, command, args, bot, user)
-	} else {
-		closestSymbol := FindSpotSymbol(text)
-		closestSymbol1 := FindFuturesSymbol(text)
-
-		if closestSymbol == "" {
-			fmt.Printf("No symbol found.")
-			//msg := tgbotapi.NewMessage(chatID, "No symbol found.")
-			//bot.Send(msg)
-			//
-			return
-		} else {
-			message1 := "/price_spot"
-			args := []string{closestSymbol}
-			handleCommand(message.Chat.ID, message1, args, bot, user)
-
-			message2 := "/price_futures"
-			args = []string{closestSymbol1}
-			handleCommand(message.Chat.ID, message2, args, bot, user)
-
-		}
-		// _, err := bot.Send(copyMessage(message))
-		// if err != nil {
-		// 	log.Println("Error sending message:", err)
-		// }
+	// Get the mute status of the user
+	isMuted, err := services.GetMute(int(user.ID))
+	if err != nil {
+		log.Println("Error getting mute status:", err)
 	}
+	if isMuted && !strings.Contains(text, "/mute") {
+		return
+	}
+
+	// Check if the message is from a group
+	if message.Chat.IsGroup() || message.Chat.IsSuperGroup() {
+		// Check if the message is a command directed at the bot
+		if strings.HasPrefix(text, "/") && strings.Contains(text, "@"+config.GetEnv("BOT_USERNAME")) {
+			parts := strings.Fields(text)
+			command := parts[0]
+			command = strings.TrimSuffix(command, "@"+config.GetEnv("BOT_USERNAME"))
+			args := parts[1:]
+			handleCommand(message.Chat.ID, command, args, bot, user)
+		}
+	} else {
+		if strings.HasPrefix(text, "/") {
+			parts := strings.Fields(text)
+			command := parts[0]
+			args := parts[1:]
+			handleCommand(message.Chat.ID, command, args, bot, user)
+		} else {
+			closestSymbol := FindSpotSymbol(text)
+			closestSymbol1 := FindFuturesSymbol(text)
+
+			if closestSymbol == "" {
+				fmt.Printf("No symbol found.")
+				//msg := tgbotapi.NewMessage(chatID, "No symbol found.")
+				//bot.Send(msg)
+				//
+				return
+			} else {
+				message1 := "/price_spot"
+				args := []string{closestSymbol}
+				handleCommand(message.Chat.ID, message1, args, bot, user)
+
+				message2 := "/price_futures"
+				args = []string{closestSymbol1}
+				handleCommand(message.Chat.ID, message2, args, bot, user)
+
+			}
+			// _, err := bot.Send(copyMessage(message))
+			// if err != nil {
+			// 	log.Println("Error sending message:", err)
+			// }
+		}
+	}
+
 }
 
 // Handle commands
