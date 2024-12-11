@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"telegram-bot/bot"
+	"telegram-bot/cache"
 	"telegram-bot/config"
 
 	//"telegram-bot/services"
@@ -53,6 +54,9 @@ func main() {
 	//services.FetchFuturesSymbols()
 
 	//go services.CallSortSymbols()
+
+	cacheManager := cache.GetVolumeCacheManager()
+	cacheManager.StartCleanupRoutine()
 
 	go http.ListenAndServe(":"+port, nil)
 	log.Printf("Bot is listening on port %s...\n", port)
