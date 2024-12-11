@@ -10,6 +10,10 @@ func GetEnv(key string) string {
 	return os.Getenv(key)
 }
 
+func GetCMCAPIKey() string {
+    return GetEnv("CMC_API_KEY")
+}
+
 func TestGetEnv(t *testing.T) {
 	testKey := "TEST_ENV_VAR"
 	testValue := "test_value"

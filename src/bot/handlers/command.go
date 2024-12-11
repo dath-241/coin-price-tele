@@ -161,6 +161,32 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 				log.Println("Error sending message:", err)
 			}
 		}
+	case "/marketcap":
+		log.Print("in marketCap")
+		token, err := services.GetUserToken(int(user.ID))
+		if err != nil {
+			log.Println("Error retrieving token:", err)
+			return
+		}
+
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /marketcap <symbol>")
+			bot.Send(msg)
+			return
+		}
+
+		symbol := args[0]
+		go GetMarketCap(chatID, symbol, bot, token)
+		log.Print("out marketCap")
+
+	case "/volume":
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /volume <symbol>")
+			bot.Send(msg)
+			return
+		}
+		symbol := strings.ToUpper(args[0])
+		go GetTradingVolume(chatID, symbol, bot)
 	case "/price_spot":
 		token, err := services.GetUserToken(int(user.ID))
 		if err != nil {

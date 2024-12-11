@@ -14,6 +14,9 @@ import (
 	"telegram-bot/services"
 	"time"
 
+	"telegram-bot/config"
+	"telegram-bot/cache"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -21,6 +24,7 @@ const (
 	APIBaseURL_Spot_Price    = "https://dath.hcmutssps.id.vn/api/get-spot-price"
 	APIBaseURL_Futures_Price = "https://dath.hcmutssps.id.vn/api/get-future-price"
 	APIBaseURL_Funding_Rate  = "https://dath.hcmutssps.id.vn/api/get-funding-rate"
+	APIBaseURL_Marketcap     = "https://dath.hcmutssps.id.vn/api/get-marketcap"
 )
 
 const (
@@ -78,6 +82,23 @@ type PriceInfoFundingRate struct {
 	FundingRate              string `json:"Funding rate"`
 	FundingRateCountdown     string `json:"Time until next funding"`
 	FundingRateIntervalHours string `json:"Funding rate interval"`
+}
+
+type MarketCapResponse []struct {
+    MarketData struct {
+        MarketCap struct {
+            USD float64 `json:"usd"`
+        } `json:"market_cap"`
+        TotalVolume struct {
+            USD float64 `json:"usd"`
+        } `json:"total_volume"`
+    } `json:"market_data"`
+}
+
+type MarketCapInfo struct {
+    Symbol       string `json:"Symbol"`
+    MarketCap    string `json:"Market Cap"`
+    TotalVolume  string `json:"Total Volume"`
 }
 
 func formatPrice(input string) string {
@@ -144,6 +165,107 @@ func FormatPrice1(a string) string {
 // func GetFundingRateStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
 // 	bot.Send(tgbotapi.NewMessage(chatID, "funding rate"))
 // }
+
+func GetMarketCap(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
+    // Create a cancellable context
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel() // Ensure context is canceled when done
+
+    // Create the request URL
+    reqUrl := fmt.Sprintf("%s?symbols=%s", APIBaseURL_Marketcap, symbol)
+    //log.Printf("API URL: %s", reqUrl)
+
+    // Create an HTTP request
+    req, err := http.NewRequestWithContext(ctx, "GET", reqUrl, nil)
+    if err != nil {
+        log.Printf("Request creation error: %v", err)
+        return
+    }
+
+    services.SetHeadersWithPrice(req, token)
+
+    // Create an HTTP client and execute the request
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        log.Printf("Failed to fetch spot price: %v", err)
+        return
+    }
+    defer resp.Body.Close()
+
+    // Check the status code of the response
+    if resp.StatusCode != http.StatusOK {
+        log.Printf("Received status code %d", resp.StatusCode)
+        if resp.StatusCode == 500 {
+            errorMsg := ErrorMessage{
+                Code:    "500",
+                Message: "You need to authenticate before executing this command.",
+            }
+            jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+            if err != nil {
+                fmt.Println("Error encoding JSON:", err)
+            }
+            formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+            msg := tgbotapi.NewMessage(chatID, formattedMsg)
+            msg.ParseMode = "MarkdownV2"
+            bot.Send(msg)
+        }
+        if resp.StatusCode == 404 {
+            errorMsg := ErrorMessage{
+                Code:    "404",
+                Message: "Symbol is not available.",
+            }
+            jsonMsg, err := json.MarshalIndent(errorMsg, "", "  ")
+            if err != nil {
+                fmt.Println("Error encoding JSON:", err)
+            }
+            formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+            msg := tgbotapi.NewMessage(chatID, formattedMsg)
+            msg.ParseMode = "MarkdownV2"
+            bot.Send(msg)
+        }
+        return
+    }
+
+    // After successful response status check, add:
+    var marketCapResponse MarketCapResponse
+
+    decoder := json.NewDecoder(resp.Body)
+    if err := decoder.Decode(&marketCapResponse); err != nil {
+        log.Printf("Error decoding JSON: %v", err)
+        return
+    }
+
+    // Kiểm tra nếu có dữ liệu trả về
+    if len(marketCapResponse) == 0 {
+        log.Printf("No market cap data received")
+        return
+    }
+
+    // Lấy dữ liệu đầu tiên từ mảng
+    firstData := marketCapResponse[0]
+
+    // Format the market cap and volume values
+    marketCap := formatPrice(fmt.Sprintf("%.2f", firstData.MarketData.MarketCap.USD))
+    totalVolume := formatPrice(fmt.Sprintf("%.2f", firstData.MarketData.TotalVolume.USD))
+
+    marketCapInfo := MarketCapInfo{
+        Symbol:      symbol,
+        MarketCap:   marketCap + " USD",
+        TotalVolume: totalVolume + " USD",
+    }
+
+    // Convert to JSON and send response
+    jsonData, err := json.MarshalIndent(marketCapInfo, "", "    ")
+    if err != nil {
+        log.Printf("Error creating JSON: %v", err)
+        return
+    }
+
+    msg := tgbotapi.NewMessage(chatID, "<pre>"+string(jsonData)+"</pre>")
+    msg.ParseMode = "HTML"
+    bot.Send(msg)
+}
 
 func GetSpotPriceStream(chatID int64, symbol string, bot *tgbotapi.BotAPI, token string) {
 
@@ -694,3 +816,126 @@ func FindClosestSymbol1(input string, symbols []string) string {
 }
 
 //
+
+
+const (
+    // Thêm constant mới
+    CMC_API_URL = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
+)
+
+type CMCResponse struct {
+    Status struct {
+        Timestamp string `json:"timestamp"`
+    } `json:"status"`
+    Data map[string]struct {
+        Symbol     string `json:"symbol"`
+        Quote struct {
+            USD struct {
+                Volume24h float64 `json:"volume_24h"`
+                LastUpdated string `json:"last_updated"`
+            } `json:"USD"`
+        } `json:"quote"`
+    } `json:"data"`
+}
+
+type VolumeInfo struct {
+    Symbol      string `json:"Symbol"`
+    Volume24h   string `json:"24h Volume"`
+    LastUpdated string `json:"Last Updated"`
+}
+
+func GetTradingVolume(chatID int64, symbol string, bot *tgbotapi.BotAPI) {
+    cacheManager := cache.GetVolumeCacheManager()
+
+    // Check cache first
+    if volumeInfo, exists := cacheManager.Get(symbol); exists {
+        sendVolumeInfo(chatID, volumeInfo, bot)
+        return
+    }
+
+    // If not in cache, fetch from API
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    // Tạo request URL với query parameters
+    reqUrl := fmt.Sprintf("%s?symbol=%s", CMC_API_URL, symbol)
+    
+    req, err := http.NewRequestWithContext(ctx, "GET", reqUrl, nil)
+    if err != nil {
+        log.Printf("Request creation error: %v", err)
+        return
+    }
+
+    // Thêm headers cần thiết
+    req.Header.Set("X-CMC_PRO_API_KEY", config.GetCMCAPIKey())
+    req.Header.Set("Accept", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        log.Printf("Failed to fetch volume: %v", err)
+        sendErrorMessage(chatID, "Failed to fetch data from CoinMarketCap", bot)
+        return
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        log.Printf("CMC API returned status code: %d", resp.StatusCode)
+        sendErrorMessage(chatID, "Error fetching data from CoinMarketCap", bot)
+        return
+    }
+
+    var cmcResponse CMCResponse
+    if err := json.NewDecoder(resp.Body).Decode(&cmcResponse); err != nil {
+        log.Printf("Error decoding JSON: %v", err)
+        sendErrorMessage(chatID, "Error processing data", bot)
+        return
+    }
+
+    // Get data for the requested symbol
+    symbolData, exists := cmcResponse.Data[symbol]
+    if !exists {
+        sendErrorMessage(chatID, "Symbol not found", bot)
+        return
+    }
+
+    // Format volume với dấu phẩy ngăn cách hàng nghìn
+    formattedVolume := formatPrice(fmt.Sprintf("%.2f", symbolData.Quote.USD.Volume24h))
+
+    volumeInfo := cache.VolumeInfo{
+        Symbol:      symbolData.Symbol,
+        Volume24h:   formattedVolume + " USD",
+        LastUpdated: symbolData.Quote.USD.LastUpdated,
+    }
+
+    // Store in cache
+    cacheManager.Set(symbol, volumeInfo)
+
+    // Send response
+    sendVolumeInfo(chatID, volumeInfo, bot)
+}
+
+func sendVolumeInfo(chatID int64, volumeInfo cache.VolumeInfo, bot *tgbotapi.BotAPI) {
+    jsonData, err := json.MarshalIndent(volumeInfo, "", "    ")
+    if err != nil {
+        log.Printf("Error creating JSON: %v", err)
+        sendErrorMessage(chatID, "Error formatting response", bot)
+        return
+    }
+
+    msg := tgbotapi.NewMessage(chatID, "<pre>"+string(jsonData)+"</pre>")
+    msg.ParseMode = "HTML"
+    bot.Send(msg)
+}
+
+func sendErrorMessage(chatID int64, message string, bot *tgbotapi.BotAPI) {
+    errorMsg := ErrorMessage{
+        Code:    "ERROR",
+        Message: message,
+    }
+    jsonMsg, _ := json.MarshalIndent(errorMsg, "", "  ")
+    formattedMsg := fmt.Sprintf("```json\n%s\n```", string(jsonMsg))
+    msg := tgbotapi.NewMessage(chatID, formattedMsg)
+    msg.ParseMode = "MarkdownV2"
+    bot.Send(msg)
+}
