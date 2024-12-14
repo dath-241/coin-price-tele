@@ -15,7 +15,7 @@ type AuthResponse struct {
 }
 type RespondBody struct {
 	Timestamp string `json:"timestamp"`
-	Status    string `json:"status"`
+	Status    int `json:"status"`
 	Message   string `json:"message"`
 	Path      string `json:"path"`
 }
