@@ -15,6 +15,12 @@ type AuthResponse struct {
 }
 type RespondBody struct {
 	Timestamp string `json:"timestamp"`
+	Status    string `json:"status"`
+	Message   string `json:"message"`
+	Path      string `json:"path"`
+}
+type FPRespondBody struct {
+	Timestamp string `json:"timestamp"`
 	Status    int `json:"status"`
 	Message   string `json:"message"`
 	Path      string `json:"path"`
@@ -132,7 +138,7 @@ func ForgotPassword(username string) (string, error) {
 		return "", fmt.Errorf("error reading response body: %v", err)
 	}
 
-	var respond RespondBody
+	var respond FPRespondBody
 	if err := json.Unmarshal(message, &respond); err != nil {
 		return "", fmt.Errorf("error unmarshalling response: %v", err)
 	}
