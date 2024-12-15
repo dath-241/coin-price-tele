@@ -450,12 +450,12 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		go CreateSnoozeTrigger(chatID, bot, price_type, symbol, conditionType, startTime, endTime)
 	case "/delete_snooze":
 		if len(args) != 2 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /delete_snooze <symbol> <price_type>")
+			msg := tgbotapi.NewMessage(chatID, "Usage: /delete_snooze <spot/future> <symbol>")
 			bot.Send(msg)
 			return
 		}
-		symbol := args[0]
-		price_type := args[1]
+		price_type := args[0]
+		symbol := args[1]
 		DeleteSnoozeTrigger(chatID, bot, symbol, price_type)
 	}
 }
