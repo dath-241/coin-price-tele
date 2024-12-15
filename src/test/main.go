@@ -49,11 +49,12 @@ func main() {
 	appHash := os.Getenv("APP_HASH")
 	phoneNum := os.Getenv("PHONE_NUMBER")
 	appIDInt, _ := strconv.Atoi(appID)
+	stringSession := os.Getenv("STRING_SESSION")
 	client, _ := telegram.NewClient(telegram.ClientConfig{
 		AppID:         int32(appIDInt),
 		AppHash:       appHash,
 		LogLevel:      telegram.LogInfo,
-		StringSession: "1BvXYxTqyspL2971nyzhihQGwNy1Wdv7bFJdz87BZkbzEscUepXfihajC_CEmQRtG-ADtppuMcsHU8FifO7dHEpSM4pJL6waphTfecFuvENgPG8pTlTf5fDhr8B1u_cdk9O49L6alYdEDuOlv93IS18zy0CuB8QhntL7gThIBhx2j0g9m6yC6VJtuBjGK-pKTjd_D8AX0g0aryHAuWzRXBB0m7-AFAXeSAAUq3YIzjWDrdEzF4xrDnTwLgiMok9nOWt9t3-D3N6yJghuukIvTQ4zCG8QzzjQrbpQnicd2KiZke_Y7PyeRbNJWl2YBtGpPqQvR8paAZRDmPtn7f8FkHXyljo6AhfVPNchPJ86OjkxLjEwOC41Ni4xODM6NDQzOjo1OjoyNDcyOTA0Ng", // Uncomment this line to use string session
+		StringSession: stringSession, // Uncomment this line to use string session
 	})
 
 	if err := client.Connect(); err != nil {

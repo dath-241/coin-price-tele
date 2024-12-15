@@ -30,6 +30,7 @@ jobs:
           APP_ID: ${{ secrets.APP_ID }}
           APP_HASH: ${{ secrets.APP_HASH }}
           PHONE_NUMBER: ${{ secrets.PHONE_NUMBER }}
+          STRING_SESSION: ${{ secrets.STRING_SESSION }}
         run: |
           cd src/test
           output=$(go run main.go)
