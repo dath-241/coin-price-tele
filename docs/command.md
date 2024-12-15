@@ -209,12 +209,5 @@
 - **Input**: `on/off` (tùy chọn).
 - **Output**: Thông báo trạng thái im lặng của bot.
 
-### 31. **/chat_config &lt;setting&gt; &lt;value&gt;**
-
-- **Công dụng**: Cấu hình chat cho nhóm/topic.
-- **Input**:
-  - `setting`: loại cài đặt.
-  - `value`: giá trị cài đặt.
-- **Output**: Xác nhận cài đặt chat.
 
 
