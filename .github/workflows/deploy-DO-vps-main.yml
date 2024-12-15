@@ -27,6 +27,7 @@ jobs:
 
       - name: Run E2E tests
         env:
+          GO_ENV: production
           APP_ID: ${{ secrets.APP_ID }}
           APP_HASH: ${{ secrets.APP_HASH }}
           PHONE_NUMBER: ${{ secrets.PHONE_NUMBER }}
