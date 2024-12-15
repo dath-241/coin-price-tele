@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
+	"telegram-bot/config"
 	"telegram-bot/services"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -29,36 +30,58 @@ func HandleMessage(message *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 
 	log.Printf("\n\n%s wrote: %s", user.FirstName+" "+user.LastName, text)
 
-	if strings.HasPrefix(text, "/") {
-		parts := strings.Fields(text)
-		command := parts[0]
-		args := parts[1:]
-		handleCommand(message.Chat.ID, command, args, bot, user)
-	} else {
-		closestSymbol := FindSpotSymbol(text)
-		closestSymbol1 := FindFuturesSymbol(text)
-
-		if closestSymbol == "" {
-			fmt.Printf("No symbol found.")
-			//msg := tgbotapi.NewMessage(chatID, "No symbol found.")
-			//bot.Send(msg)
-			//
-			return
-		} else {
-			message1 := "/price_spot"
-			args := []string{closestSymbol}
-			handleCommand(message.Chat.ID, message1, args, bot, user)
-
-			message2 := "/price_futures"
-			args = []string{closestSymbol1}
-			handleCommand(message.Chat.ID, message2, args, bot, user)
-
-		}
-		// _, err := bot.Send(copyMessage(message))
-		// if err != nil {
-		// 	log.Println("Error sending message:", err)
-		// }
+	// Get the mute status of the user
+	isMuted, err := services.GetMute(int(user.ID))
+	if err != nil {
+		log.Println("Error getting mute status:", err)
 	}
+	if isMuted && !strings.Contains(text, "/mute") {
+		return
+	}
+
+	// Check if the message is from a group
+	if message.Chat.IsGroup() || message.Chat.IsSuperGroup() {
+		// Check if the message is a command directed at the bot
+		if strings.HasPrefix(text, "/") && strings.Contains(text, "@"+config.GetEnv("BOT_USERNAME")) {
+			parts := strings.Fields(text)
+			command := parts[0]
+			command = strings.TrimSuffix(command, "@"+config.GetEnv("BOT_USERNAME"))
+			args := parts[1:]
+			handleCommand(message.Chat.ID, command, args, bot, user)
+		}
+	} else {
+		if strings.HasPrefix(text, "/") {
+			parts := strings.Fields(text)
+			command := parts[0]
+			args := parts[1:]
+			handleCommand(message.Chat.ID, command, args, bot, user)
+		} else {
+			closestSymbol := FindSpotSymbol(text)
+			closestSymbol1 := FindFuturesSymbol(text)
+
+			if closestSymbol == "" {
+				fmt.Printf("No symbol found.")
+				//msg := tgbotapi.NewMessage(chatID, "No symbol found.")
+				//bot.Send(msg)
+				//
+				return
+			} else {
+				message1 := "/price_spot"
+				args := []string{closestSymbol}
+				handleCommand(message.Chat.ID, message1, args, bot, user)
+
+				message2 := "/price_futures"
+				args = []string{closestSymbol1}
+				handleCommand(message.Chat.ID, message2, args, bot, user)
+
+			}
+			// _, err := bot.Send(copyMessage(message))
+			// if err != nil {
+			// 	log.Println("Error sending message:", err)
+			// }
+		}
+	}
+
 }
 
 // Handle commands
@@ -106,6 +129,85 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 				log.Println("Error storing token:", err)
 			}
 		}
+
+	case "/register":
+		//syntax /signup <email> <name> <username> <password>
+		if len(args) < 4 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /register <email> <name> <username> <password>")
+			bot.Send(msg)
+			return
+		}
+		email := args[0]
+		name := args[1]
+		username := args[2]
+		password := args[3]
+		response, err := services.Regsiter(email, name, username, password)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		} else {
+			bot.Send(tgbotapi.NewMessage(chatID, response))
+			bot.Send(tgbotapi.NewMessage(chatID, "use /login to log in"))
+		}
+
+	case "/forgotpassword":
+		//syntax /forgotpassword <username>
+		//!cho OTP r lm j nua ?
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /forgotpassword <username>")
+			bot.Send(msg)
+			return
+		}
+		username := args[0]
+		response, err := services.ForgotPassword(username)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		} else {
+			bot.Send(tgbotapi.NewMessage(chatID, response))
+		}
+	case "/testingadmin":
+		if len(args) < 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /forgotpassword <username>")
+			bot.Send(msg)
+			return
+		}
+		username := args[0]
+		token, err := services.GetUserToken(int(chatID))
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		}
+		response, err := services.Testadmin(username, token)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		} else {
+			bot.Send(tgbotapi.NewMessage(chatID, response))
+		}
+
+	case "/changepassword":
+		//syntax: /changepassword <old_password> <new_password> <confirm_newpassword>
+		// if len(args) < 3 {
+		// 	msg := tgbotapi.NewMessage(chatID, "Usage: /changepassword <old_password> <new_password> <confirm_newpassword>")
+		// 	bot.Send(msg)
+		// 	return
+		// }
+		// old_password := args[0]
+		// new_password := args[1]
+		// confirm_newpassword := args[2]
+	case "/mute":
+		if len(args) != 1 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /mute <on/off>")
+			bot.Send(msg)
+			return
+		}
+		// Get the mute status of the user
+		isMuted := args[0] == "on"
+		err := services.SetMute(int(user.ID), isMuted)
+		if err != nil {
+			log.Println("Error setting mute status:", err)
+			return
+		}
+		bot.Send(tgbotapi.NewMessage(chatID, "Mute status set to "+args[0]))
+	case "/changeinfo":
+		bot.Send(tgbotapi.NewMessage(chatID, "In Progress"))
 	case "/getinfo":
 		token, err := services.GetUserToken(int(user.ID))
 		if err != nil {
@@ -317,10 +419,56 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			return
 		}
 		go RegisterPriceDifferenceAndFundingRate(chatID, symbol, threshold, is_lower, "funding-rate", bot)
+	case "/create_snooze":
+		if len(args) != 5 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /create_snooze <spot/future> <symbol> <conditionType> <startTime> <endTime>")
+			bot.Send(msg)
+			return
+		}
+		price_type := args[0]
+		symbol := args[1]
+		conditionType := args[2]
+		startTime := args[3]
+		endTime := args[4]
+
+		// Validate time format
+		layout := "2006-01-02T15:04:05"
+		_, err := time.Parse(layout, startTime)
+		if err != nil {
+			msg := tgbotapi.NewMessage(chatID, "Invalid startTime format. Please use format: YYYY-MM-DDThh:mm:ss")
+			bot.Send(msg)
+			return
+		}
+
+		_, err = time.Parse(layout, endTime)
+		if err != nil {
+			msg := tgbotapi.NewMessage(chatID, "Invalid endTime format. Please use format: YYYY-MM-DDThh:mm:ss")
+			bot.Send(msg)
+			return
+		}
+
+		go CreateSnoozeTrigger(chatID, bot, price_type, symbol, conditionType, startTime, endTime)
+	case "/delete_snooze":
+		if len(args) != 2 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /delete_snooze <symbol> <price_type>")
+			bot.Send(msg)
+			return
+		}
+		symbol := args[0]
+		price_type := args[1]
+		DeleteSnoozeTrigger(chatID, bot, symbol, price_type)
 	}
 }
 
 func HandleKlineCommand(chatID int64, command string, bot *tgbotapi.BotAPI, user *tgbotapi.User) {
+	// Get the mute status of the user
+	isMuted, err := services.GetMute(int(user.ID))
+	if err != nil {
+		log.Println("Error getting mute status:", err)
+	}
+	if isMuted && !strings.Contains(command, "/mute") {
+		return
+	}
 	switch command {
 	case "/kline":
 		updateSymbolUsage("BTCUSDT")

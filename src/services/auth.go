@@ -19,6 +19,12 @@ type RespondBody struct {
 	Message   string `json:"message"`
 	Path      string `json:"path"`
 }
+type FPRespondBody struct {
+	Timestamp string `json:"timestamp"`
+	Status    int `json:"status"`
+	Message   string `json:"message"`
+	Path      string `json:"path"`
+}
 
 func AuthenticateUser(telegramId int64) (string, error) {
 	// Check if the user has token in the database
@@ -48,7 +54,6 @@ func LogIn(username, password string) (string, string, error) {
 	if resp.StatusCode != http.StatusOK {
 		return "", "", fmt.Errorf("invalid username or password")
 	}
-
 	token := resp.Cookies()[0].Value
 	defer resp.Body.Close()
 
@@ -133,7 +138,7 @@ func ForgotPassword(username string) (string, error) {
 		return "", fmt.Errorf("error reading response body: %v", err)
 	}
 
-	var respond RespondBody
+	var respond FPRespondBody
 	if err := json.Unmarshal(message, &respond); err != nil {
 		return "", fmt.Errorf("error unmarshalling response: %v", err)
 	}
