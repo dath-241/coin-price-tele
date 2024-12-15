@@ -20,3 +20,10 @@ go.work.sum
 
 # env file
 .env
+
+# test
+test/cache.db
+test/.env
+test/session.dat
+
+
