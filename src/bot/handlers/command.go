@@ -255,7 +255,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			bot.Send(tgbotapi.NewMessage(chatID, response))
 		}
 
-	case "/alert_indicator <symbol> <indicator> <condition> <value>":
+	case "/alert_indicator":
 		if len(args) < 4 {
 			msg := tgbotapi.NewMessage(chatID, "Usage: /alert_indicator <symbol> <indicator> <condition> <value>")
 			bot.Send(msg)
@@ -267,7 +267,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		} else {
 			bot.Send(tgbotapi.NewMessage(chatID, "Nhận indicator " + args[1]))
 		}
-		
+
 	case "/changepassword":
 		msg := tgbotapi.NewMessage(chatID, "In progress")
 		bot.Send(msg)
