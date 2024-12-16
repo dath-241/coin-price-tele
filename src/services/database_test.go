@@ -1,51 +1,90 @@
 package services
 
 import (
-	"database/sql"
-	"errors"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/assert"
 )
 
-// Mocked errors for demonstration
-var errMockDBInitialization = errors.New("mock database initialization error")
-var errMockTokenStore = errors.New("mock token store error")
-var errMockTokenRetrieval = errors.New("mock token retrieval error")
-
-func MockInitDB(database *sql.DB) error {
-	return errMockDBInitialization
-}
-
-func TestInitDB(t *testing.T) {
-	err := MockInitDB(nil)
-
-	if err == nil || err.Error() != errMockDBInitialization.Error() {
-		t.Errorf("Expected error %v, got %v", errMockDBInitialization, err)
-	} else {
-		t.Logf("TestInitDB passed with expected error: %v", err)
-	}
-}
-
 func TestStoreUserToken(t *testing.T) {
-	userID := 12345
-	token := "sample_token"
+	mockDB, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer mockDB.Close()
 
-	// Call StoreUserToken and force a successful return of the mock error
-	err := StoreUserToken(userID, token)
-	if err == nil || err.Error() == errMockTokenStore.Error() {
-		t.Errorf("Expected error %v, got %v", errMockTokenStore, err)
-	} else {
-		t.Logf("TestStoreUserToken passed with expected error: %v", err)
-	}
+	db = mockDB
+
+	// Mock token insertion
+	mock.ExpectExec(`INSERT INTO user_tokens`).
+		WithArgs(123, "sample-token").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = StoreUserToken(123, "sample-token")
+	assert.NoError(t, err)
+
+	// Verify expectations
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
 }
 
 func TestGetUserToken(t *testing.T) {
-	userID := 12345
+	mockDB, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer mockDB.Close()
 
-	// Attempt to retrieve a token and always get the mock error
-	_, err := GetUserToken(userID)
-	if err == nil || err.Error() == errMockTokenRetrieval.Error() {
-		t.Errorf("Expected error %v, got %v", errMockTokenRetrieval, err)
-	} else {
-		t.Logf("TestGetUserToken passed with expected error: %v", err)
-	}
+	db = mockDB
+
+	// Mock token retrieval
+	mock.ExpectQuery(`SELECT token FROM user_tokens WHERE user_id = \$1`).
+		WithArgs(123).
+		WillReturnRows(sqlmock.NewRows([]string{"token"}).AddRow("sample-token"))
+
+	token, err := GetUserToken(123)
+	assert.NoError(t, err)
+	assert.Equal(t, "sample-token", token)
+
+	// Verify expectations
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestGetMute(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer mockDB.Close()
+
+	db = mockDB
+
+	// Mock is_muted retrieval
+	mock.ExpectQuery(`SELECT is_muted FROM user_tokens WHERE user_id = \$1`).
+		WithArgs(123).
+		WillReturnRows(sqlmock.NewRows([]string{"is_muted"}).AddRow(true))
+
+	isMuted, err := GetMute(123)
+	assert.NoError(t, err)
+	assert.True(t, isMuted)
+
+	// Verify expectations
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestSetMute(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer mockDB.Close()
+
+	db = mockDB
+
+	// Mock is_muted update/insert
+	mock.ExpectExec(`INSERT INTO user_tokens`).
+		WithArgs(123, true).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = SetMute(123, true)
+	assert.NoError(t, err)
+
+	// Verify expectations
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
 }

@@ -12,6 +12,9 @@ require (
 )
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2 // indirect
+	github.com/amarnathcjd/gogram v1.4.6 // indirect
+	github.com/brianvoe/gofakeit/v7 v7.1.2 // indirect
 	github.com/chromedp/cdproto v0.0.0-20231011050154-1d073bb38998 // indirect
 	github.com/chromedp/sysutil v1.0.0 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
@@ -20,7 +23,10 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
+	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
 )
 
 require (

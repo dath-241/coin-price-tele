@@ -35,15 +35,25 @@ var (
 )
 
 var commandList = []string{
-	"/start - Authenticate and start using the bot",
-	"/login - Log in to the bot",
-	"/getinfo - Get user info",
-	"/menu - Show menu with buttons",
-	"/help - Show available commands",
-	"/kline - Fetches Kline data for a specific trading pair and interval with two choice 'ondemand' or 'realtime'",
-	"/p <symbol> - Fetches the price and funding rate of a specific trading pair",
+	"help - Show available commands",
+	"start - Authenticate and start using the bot",
+	"login - Log in to the bot",
+	"getinfo - Get user info",
+	"menu - Show menu with buttons",
+	"p <symbol> - Fetches the price and funding rate of a specific trading pair",
+	"marketcap <symbol> - Fetches the marketcap of a specific trading pair",
+	"volume <symbol> - Fetches the volume of a specific trading pair",
+	"price_spot <symbol> - Fetches the price spot of a specific trading pair",
+	"price_futures <symbol> - Fetches the price futures of a specific trading pair",
+	"funding_rate <symbol> - Fetches the funding rate of a specific trading pair",
+	"all_triggers - Fetches all triggers",
+	"delete_trigger <type> <symbol> - Deletes a trigger",
+	"alert_price_with_threshold <type> <direction> <symbol> <threshold> - Alerts the price with a threshold",
+	"price_difference <direction> <symbol> <threshold> - Alerts the price difference with a threshold",
+	"funding_rate_change <direction> <symbol> <threshold> - Alerts the funding rate change with a threshold",
+	"kline - Fetches Kline data for a specific trading pair and interval with two choice 'ondemand' or 'realtime'",
 	"<symbol> - Fetches the price a specific trading pair",
-	"/mute <on/off> - Mute bot",
+	"mute <on/off> - Mute bot",
 }
 
 type UserInfo struct {

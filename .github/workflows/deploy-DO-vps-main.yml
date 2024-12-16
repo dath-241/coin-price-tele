@@ -9,7 +9,42 @@ on:
       - main
 
 jobs:
+  test:
+    runs-on: self-hosted  # Use GitHub-hosted runner for tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.23'  # Specify your Go version
+
+      - name: Run unit tests
+        run: |
+          cd src
+          go test -v ./...
+
+      - name: Run E2E tests
+        env:
+          GO_ENV: production
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_HASH: ${{ secrets.APP_HASH }}
+          PHONE_NUMBER: ${{ secrets.PHONE_NUMBER }}
+          STRING_SESSION: ${{ secrets.STRING_SESSION }}
+        run: |
+          cd src/test
+          output=$(go run main.go)
+          echo "Output: $output"
+          if [[ $output == *"All tests passed"* ]]; then 
+            echo "E2E tests passed"
+          else
+            echo "E2E tests failed"
+            exit 1
+          fi
+
   deploy:
+    needs: test  # This ensures deploy only runs if tests pass
     runs-on: self-hosted
 
     steps:
