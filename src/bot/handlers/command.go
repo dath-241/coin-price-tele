@@ -151,7 +151,6 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 
 	case "/forgotpassword":
 		//syntax /forgotpassword <username>
-		//!cho OTP r lm j nua ?
 		if len(args) < 1 {
 			msg := tgbotapi.NewMessage(chatID, "Usage: /forgotpassword <username>")
 			bot.Send(msg)
@@ -160,29 +159,26 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		username := args[0]
 		response, err := services.ForgotPassword(username)
 		if err != nil {
-			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+			bot.Send(tgbotapi.NewMessage(chatID, err.Error()))
 		} else {
 			bot.Send(tgbotapi.NewMessage(chatID, response))
 		}
-	case "/testingadmin":
-		if len(args) < 1 {
-			msg := tgbotapi.NewMessage(chatID, "Usage: /forgotpassword <username>")
+	case "/alert_indicator <symbol> <indicator> <condition> <value>":
+		if len(args) < 4 {
+			msg := tgbotapi.NewMessage(chatID, "Usage: /alert_indicator <symbol> <indicator> <condition> <value>")
 			bot.Send(msg)
 			return
 		}
-		username := args[0]
-		token, err := services.GetUserToken(int(chatID))
-		if err != nil {
-			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
-		}
-		response, err := services.Testadmin(username, token)
-		if err != nil {
-			bot.Send(tgbotapi.NewMessage(chatID, "Error in registering: "+err.Error()))
+		if args[1] != "EMA" && args[1] != "MA" {
+			bot.Send(tgbotapi.NewMessage(chatID, "Indicator không hợp lệ (EMA/MA)"))
+			return
 		} else {
-			bot.Send(tgbotapi.NewMessage(chatID, response))
+			bot.Send(tgbotapi.NewMessage(chatID, "Nhận indicator " + args[1]))
 		}
-
+		
 	case "/changepassword":
+		msg := tgbotapi.NewMessage(chatID, "In progress")
+		bot.Send(msg)
 		//syntax: /changepassword <old_password> <new_password> <confirm_newpassword>
 		// if len(args) < 3 {
 		// 	msg := tgbotapi.NewMessage(chatID, "Usage: /changepassword <old_password> <new_password> <confirm_newpassword>")
