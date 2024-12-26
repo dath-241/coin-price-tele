@@ -18,7 +18,7 @@ type ErrorResponse struct {
 }
 
 func RegisterPriceThreshold(ID int64, symbol string, threshold float64, is_lower bool, price_type string, bot *tgbotapi.BotAPI) error {
-	url := fmt.Sprintf("https://a2-price.thuanle.me/vip2/create?triggerType=%s", price_type)
+	url := fmt.Sprintf("https://a2-price.thuanle.me/api/vip2/create?triggerType=%s", price_type)
 	fmt.Println("price_type:", price_type)
 	method := "POST"
 
@@ -82,7 +82,7 @@ func RegisterPriceThreshold(ID int64, symbol string, threshold float64, is_lower
 }
 
 func RegisterPriceDifferenceAndFundingRate(ID int64, symbol string, threshold float64, is_lower bool, Type string, bot *tgbotapi.BotAPI) error {
-	url := fmt.Sprintf("https://a2-price.thuanle.me/vip2/create?triggerType=%s", Type)
+	url := fmt.Sprintf("https://a2-price.thuanle.me/api/vip2/create?triggerType=%s", Type)
 	fmt.Println("Type:", Type)
 	method := "POST"
 
@@ -172,7 +172,7 @@ type AllTriggerResponse struct {
 }
 
 func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
-	url := "https://a2-price.thuanle.me/vip2/get/alerts"
+	url := "https://a2-price.thuanle.me/api/vip2/get/alerts"
 	method := "GET"
 
 	client := &http.Client{}
@@ -250,7 +250,7 @@ func GetAllTrigger(ID int64, bot *tgbotapi.BotAPI) {
 }
 
 func DeleteTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type string) {
-	url := fmt.Sprintf("https://a2-price.thuanle.me/vip2/delete/%s?triggerType=%s", symbol, price_type)
+	url := fmt.Sprintf("https://a2-price.thuanle.me/api/vip2/delete/%s?triggerType=%s", symbol, price_type)
 	method := "DELETE"
 
 	client := &http.Client{}
@@ -298,7 +298,7 @@ func removeTrailingZeros(n float64) string {
 }
 
 func CreateSnoozeTrigger(ID int64, bot *tgbotapi.BotAPI, price_type string, symbol string, conditionType string, startTime string, endTime string) {
-	url := fmt.Sprintf("https://a2-price.thuanle.me/api/vip2/create/snooze?snoozeType=%s", price_type)
+	url := fmt.Sprintf("https://a2-price.thuanle.me/api/api/vip2/create/snooze?snoozeType=%s", price_type)
 	method := "POST"
 
 	payload := strings.NewReader(fmt.Sprintf(`{
@@ -341,7 +341,7 @@ func CreateSnoozeTrigger(ID int64, bot *tgbotapi.BotAPI, price_type string, symb
 }
 
 func DeleteSnoozeTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type string) {
-	url := fmt.Sprintf("https://a2-price.thuanle.me/api/vip2/delete/snooze/%s?snoozeType=%s", symbol, price_type)
+	url := fmt.Sprintf("https://a2-price.thuanle.me/api/api/vip2/delete/snooze/%s?snoozeType=%s", symbol, price_type)
 	method := "DELETE"
 
 	client := &http.Client{}
