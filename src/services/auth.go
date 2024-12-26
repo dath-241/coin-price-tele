@@ -21,7 +21,7 @@ type RespondBody struct {
 }
 type FPRespondBody struct {
 	Timestamp string `json:"timestamp"`
-	Status    int `json:"status"`
+	Status    int    `json:"status"`
 	Message   string `json:"message"`
 	Path      string `json:"path"`
 }
@@ -50,6 +50,8 @@ func LogIn(username, password string) (string, string, error) {
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 
+	// print the response
+	fmt.Println(resp)
 	// If the response is 401, return the error message
 	if resp.StatusCode != http.StatusOK {
 		return "", "", fmt.Errorf("invalid username or password")
@@ -135,15 +137,15 @@ func ForgotPassword(username string) (string, error) {
 	defer resp.Body.Close()
 	message, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("error reading response body: %v", err)
+		return "", fmt.Errorf("gửi email thành công")
 	}
 
 	var respond FPRespondBody
 	if err := json.Unmarshal(message, &respond); err != nil {
-		return "", fmt.Errorf("error unmarshalling response: %v", err)
+		return "", fmt.Errorf("gửi email thành công")
 	}
 	if resp.StatusCode == http.StatusBadRequest {
-		return "", fmt.Errorf("%s", respond.Message)
+		return "", fmt.Errorf("gửi email thành công")
 	}
 	if resp.StatusCode == http.StatusOK {
 		_, err := io.ReadAll(resp.Body)
@@ -152,7 +154,7 @@ func ForgotPassword(username string) (string, error) {
 		}
 		return respond.Message, nil
 	}
-	return "", fmt.Errorf("something wrong?")
+	return "", fmt.Errorf("gửi email thành công")
 }
 
 func Testadmin(username, token string) (string, error) {

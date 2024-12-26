@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -24,61 +23,12 @@ type Payload struct {
 	Threshold []float64 `json:"threshold"`
 }
 
-var storedChatIDs = make(map[int64]bool)
-
-//!send to BE
+// !send to BE
 type CoinPriceUpdate struct {
-	Symbol   string    `json:"symbol"`
-	Price float64  `json:"threshold"`
-	Condition string `json:"condition"` // >= price, <=, >, < 
-	Triggertype string `json:"triggerType"`
-}
-
-// Function to store chatID in the backend
-func StoreChatID(ID int64) error {
-	if storedChatIDs[ID] {
-		fmt.Printf("ChatID %d already stored!\n", ID)
-		return nil
-	}
-	storedChatIDs[ID] = true
-
-	url := "https://1662-116-110-41-111.ngrok-free.app/backend" // Replace with your backend API URL
-
-	// Create payload with chatID
-	payload := Payload{
-		ChatID: ID,
-	}
-
-	// Convert payload to JSON
-	jsonPayload, err := json.Marshal(payload)
-
-	if err != nil {
-		return fmt.Errorf("error marshalling chatID payload: %v", err)
-	}
-
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-
-	resp, err := client.Post(url, "application/json", bytes.NewBuffer(jsonPayload))
-
-	if err != nil {
-		return fmt.Errorf("error sending request to backend: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Check the response status code
-	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Printf("error reading response body: %v", err)
-			return fmt.Errorf("error reading response body: %v", err)
-		}
-		fmt.Printf("backend returned non-OK status: %d, body: %s", resp.StatusCode, string(body))
-		return fmt.Errorf("backend returned non-OK status: %d, body: %s", resp.StatusCode, string(body))
-	}
-	fmt.Printf("Stored chatID %d successfully!\n", ID)
-	return nil
+	Symbol      string  `json:"symbol"`
+	Price       float64 `json:"threshold"`
+	Condition   string  `json:"condition"` // >= price, <=, >, <
+	Triggertype string  `json:"triggerType"`
 }
 
 func SendMessageToUser(bot *tgbotapi.BotAPI, chatID int64, message string) {
@@ -87,15 +37,15 @@ func SendMessageToUser(bot *tgbotapi.BotAPI, chatID int64, message string) {
 }
 
 func NotifyUsers(bot *tgbotapi.BotAPI) {
-    chatIDs, err := GetChatIDs()
-    if err != nil {
-        log.Fatalf("Error retrieving chatIDs: %v", err)
-    }
+	chatIDs, err := GetChatIDs()
+	if err != nil {
+		log.Fatalf("Error retrieving chatIDs: %v", err)
+	}
 
-    for _, chatID := range chatIDs {
-        msg := tgbotapi.NewMessage(6989009560, chatID)
-        bot.Send(msg)
-    }
+	for _, chatID := range chatIDs {
+		msg := tgbotapi.NewMessage(6989009560, chatID)
+		bot.Send(msg)
+	}
 }
 
 // Function to retrieve chatIDs from the backend

@@ -42,7 +42,7 @@ type KlineData struct {
 	Volume             string `json:"volume"`
 }
 
-const baseUrl = "https://dath.hcmutssps.id.vn//api/vip1/get-kline"
+const baseUrl = "https://a2-price.thuanle.me/api/vip1/get-kline"
 
 // UserConnection stores request state for each user
 type UserConnection struct {
