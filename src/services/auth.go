@@ -21,7 +21,7 @@ type RespondBody struct {
 }
 type FPRespondBody struct {
 	Timestamp string `json:"timestamp"`
-	Status    int `json:"status"`
+	Status    int    `json:"status"`
 	Message   string `json:"message"`
 	Path      string `json:"path"`
 }
@@ -50,6 +50,8 @@ func LogIn(username, password string) (string, string, error) {
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 
+	// print the response
+	fmt.Println(resp)
 	// If the response is 401, return the error message
 	if resp.StatusCode != http.StatusOK {
 		return "", "", fmt.Errorf("invalid username or password")
