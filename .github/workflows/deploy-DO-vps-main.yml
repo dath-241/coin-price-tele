@@ -18,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.20'  # Specify your Go version
+          go-version: '1.23'  # Specify your Go version
 
       - name: Run unit tests
         run: |
@@ -27,6 +27,7 @@ jobs:
 
       - name: Run E2E tests
         env:
+          GO_ENV: production
           APP_ID: ${{ secrets.APP_ID }}
           APP_HASH: ${{ secrets.APP_HASH }}
           PHONE_NUMBER: ${{ secrets.PHONE_NUMBER }}
