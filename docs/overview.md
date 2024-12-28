@@ -16,6 +16,9 @@
 
 [Github](https://github.com/dath-241/coin-price-tele)
 
+## Link Trello phân công công việc của nhóm
+[Link](https://trello.com/b/0su2vmDF/cnpm-241)
+
 # Folder Structure
 
 ```plaintext
