@@ -87,7 +87,7 @@ var commands = []tgbotapi.BotCommand{
 	},
 	{
 		Command:     "delete_snooze",
-		Description: "<symbol> <price_type>",
+		Description: "<spot/future> <symbol>",
 	},
 	{
 		Command:     "mute",
