@@ -283,7 +283,7 @@ func DeleteTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type str
 	}
 	fmt.Println(string(body))
 	bot.Send(tgbotapi.NewMessage(ID, string(body)))
-	DeleteSnoozeTrigger(ID, bot, symbol, price_type)
+	DeleteSnoozeTrigger(ID, bot, symbol, price_type, false)
 	GetAllTrigger(ID, bot)
 }
 
@@ -298,7 +298,7 @@ func removeTrailingZeros(n float64) string {
 }
 
 func CreateSnoozeTrigger(ID int64, bot *tgbotapi.BotAPI, price_type string, symbol string, conditionType string, startTime string, endTime string) {
-	url := fmt.Sprintf("https://a2-price.thuanle.me/api/api/vip2/create/snooze?snoozeType=%s", price_type)
+	url := fmt.Sprintf("https://a2-price.thuanle.me/api/vip2/create/snooze?snoozeType=%s", price_type)
 	method := "POST"
 
 	payload := strings.NewReader(fmt.Sprintf(`{
@@ -340,8 +340,8 @@ func CreateSnoozeTrigger(ID int64, bot *tgbotapi.BotAPI, price_type string, symb
 	bot.Send(tgbotapi.NewMessage(ID, string(body)))
 }
 
-func DeleteSnoozeTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type string) {
-	url := fmt.Sprintf("https://a2-price.thuanle.me/api/api/vip2/delete/snooze/%s?snoozeType=%s", symbol, price_type)
+func DeleteSnoozeTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_type string , alert_error bool) {
+	url := fmt.Sprintf("https://a2-price.thuanle.me/api/vip2/delete/snooze/%s?snoozeType=%s", symbol, price_type)
 	method := "DELETE"
 
 	client := &http.Client{}
@@ -371,6 +371,10 @@ func DeleteSnoozeTrigger(ID int64, bot *tgbotapi.BotAPI, symbol string, price_ty
 		fmt.Println(err)
 		return
 	}
-	bot.Send(tgbotapi.NewMessage(ID, string(body)))
 	fmt.Println(string(body))
+	if strings.Contains(string(body), "success") {
+		bot.Send(tgbotapi.NewMessage(ID, "Snooze trigger deleted successfully!"))
+	} else if (strings.Contains(string(body), "Error") && alert_error) {
+		bot.Send(tgbotapi.NewMessage(ID, "Failed to delete snooze trigger."))
+	}
 }

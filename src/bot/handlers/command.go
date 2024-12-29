@@ -265,7 +265,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 			bot.Send(tgbotapi.NewMessage(chatID, "Indicator không hợp lệ (EMA/MA)"))
 			return
 		} else {
-			bot.Send(tgbotapi.NewMessage(chatID, "Nhận indicator " + args[1]))
+			bot.Send(tgbotapi.NewMessage(chatID, "Nhận indicator "+args[1]))
 		}
 
 	case "/changepassword":
@@ -454,7 +454,7 @@ func handleCommand(chatID int64, command string, args []string, bot *tgbotapi.Bo
 		}
 		price_type := args[0]
 		symbol := args[1]
-		DeleteSnoozeTrigger(chatID, bot, symbol, price_type)
+		DeleteSnoozeTrigger(chatID, bot, symbol, price_type, true)
 	}
 }
 
